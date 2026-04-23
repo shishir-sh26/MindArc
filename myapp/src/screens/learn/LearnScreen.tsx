@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, FlatList } from 'react-native';
 import { useTheme } from '../../hooks/useTheme';
 import { educationalModules } from '../../data/educationalModules';
 import { Card } from '../../components/common/Card';

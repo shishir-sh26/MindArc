@@ -18,6 +18,24 @@ interface MoodChartProps {
 export const MoodChart = ({ data }: MoodChartProps) => {
   const { colors } = useTheme();
   const [tooltip, setTooltip] = useState<{ x: number, y: number, val: number } | null>(null);
+
+  const pathLength = 1000;
+  const progress = useSharedValue(pathLength);
+  const pointScale = useSharedValue(0);
+
+  useEffect(() => {
+    progress.value = withTiming(0, { duration: 1500, easing: Easing.inOut(Easing.cubic) });
+    pointScale.value = withDelay(1200, withSpring(1, { damping: 12 }));
+  }, []);
+
+  const animatedPathStyle = useAnimatedStyle(() => ({
+    strokeDashoffset: progress.value
+  }));
+
+  const animatedPointStyle = useAnimatedStyle(() => ({
+    r: pointScale.value * 4,
+    strokeWidth: pointScale.value * 2
+  }));
   
   if (!data || data.length === 0) {
     return <View style={styles.empty}><Text style={{ color: colors.textMuted }}>No data to display</Text></View>;
@@ -65,23 +83,6 @@ export const MoodChart = ({ data }: MoodChartProps) => {
     ? `${pathData} L ${points[points.length-1].x} ${height} L ${points[0].x} ${height} Z`
     : '';
 
-  const pathLength = 1000;
-  const progress = useSharedValue(pathLength);
-  const pointScale = useSharedValue(0);
-
-  useEffect(() => {
-    progress.value = withTiming(0, { duration: 1500, easing: Easing.inOut(Easing.cubic) });
-    pointScale.value = withDelay(1200, withSpring(1, { damping: 12 }));
-  }, []);
-
-  const animatedPathStyle = useAnimatedStyle(() => ({
-    strokeDashoffset: progress.value
-  }));
-
-  const animatedPointStyle = useAnimatedStyle(() => ({
-    r: pointScale.value * 4,
-    strokeWidth: pointScale.value * 2
-  }));
 
   return (
     <View style={styles.container}>
