@@ -6,6 +6,7 @@ export type BottomTabParamList = {
   Track: undefined;
   Relax: undefined;
   Activity: undefined;
+  ThoughtDiary: undefined;
 };
 
 export type RootStackParamList = {

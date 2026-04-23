@@ -9,6 +9,7 @@ export interface MoodEntry {
   symptoms: string[];
   sleepHours: number;
   sleepQuality: 'poor' | 'okay' | 'good';
+  thoughtDiary?: string; // ADDED: Must support the new diary text
   timestamp: number;
 }
 
@@ -32,17 +33,18 @@ export const useMoodStore = create<MoodState>()(
         };
 
         set((state) => {
-          // Remove existing entry for same date if it exists
-          const filteredEntries = state.entries.filter(e => e.date !== entryData.date);
-          const newEntries = [...filteredEntries, newEntry].sort((a, b) => b.timestamp - a.timestamp);
+          // BRUTAL FIX: We no longer delete entries from the same date.
+          // We keep everything and sort by newest first.
+          const newEntries = [...state.entries, newEntry].sort((a, b) => b.timestamp - a.timestamp);
           
-          // Calculate streak (simplified version)
-          const latestStreak = state.streak + 1; // Basic logic just to increment
+          const latestStreak = state.streak + 1;
 
           return { entries: newEntries, streak: latestStreak };
         });
       },
       getEntryByDate: (date) => {
+        // Return the MOST RECENT entry for that date to pre-fill the form,
+        // but don't delete the others.
         return get().entries.find(e => e.date === date);
       }
     }),

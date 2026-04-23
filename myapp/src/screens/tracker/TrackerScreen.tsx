@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { supabase } from '../../utils/supabase';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { useTheme } from '../../hooks/useTheme';
 import { useMoodStore } from '../../store/moodStore';
 import { Card } from '../../components/common/Card';
@@ -44,20 +45,54 @@ export default function TrackerScreen({ navigation }: Props) {
   const [symptoms, setSymptoms] = useState<string[]>(existingEntry?.symptoms || []);
   const [sleepHours, setSleepHours] = useState<number>(existingEntry?.sleepHours || 7);
   const [sleepQuality, setSleepQuality] = useState<'poor' | 'okay' | 'good'>(existingEntry?.sleepQuality || 'okay');
-
+const [thoughtDiary, setThoughtDiary] = useState<string>(existingEntry?.thoughtDiary || '');
   const toggleSymptom = (s: string) => {
     setSymptoms(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
   };
 
-  const handleSave = () => {
-    addEntry({
-      date: today,
-      moodLevel,
-      symptoms,
-      sleepHours,
-      sleepQuality,
-    });
-    navigation.navigate('TrackerHistory');
+  const handleSave = async () => {
+    // 1. Validation Bouncer
+    if (symptoms.length === 0 && (!thoughtDiary || thoughtDiary.trim() === '')) {
+      Alert.alert("Empty Entry", "Please select a symptom or write a thought before saving.");
+      return;
+    }
+
+    // 2. Prepare Payload (Keys must match the SQL table exactly)
+    const payload = {
+      log_date: today,
+      mood_level: moodLevel,
+      symptoms: symptoms,
+      sleep_hours: sleepHours,
+      sleep_quality: sleepQuality,
+      thought_diary: thoughtDiary,
+    };
+
+    try {
+      // 3. Network Execution
+      const { error } = await supabase
+        .from('tracker_logs')
+        .insert([payload]);
+
+      if (error) {
+        console.error("Supabase Error:", error);
+        throw new Error(error.message);
+      }
+
+      // 4. Local State Backup & Navigation
+      addEntry({
+        date: today,
+        moodLevel,
+        symptoms,
+        sleepHours,
+        sleepQuality,
+        thoughtDiary,
+      });
+      
+      navigation.navigate('TrackerHistory');
+
+    } catch (err: any) {
+      Alert.alert("Network Error", "Could not save to the database. " + err.message);
+    }
   };
 
   return (
@@ -147,6 +182,28 @@ export default function TrackerScreen({ navigation }: Props) {
           ))}
         </View>
       </Card>
+<Card style={styles.card}>
+        <Text style={[styles.label, { color: colors.text }]}>Negative Thought Tracker</Text>
+        <Text style={[styles.subLabel, { color: colors.textMuted }]}>Log a specific thought for reflection.</Text>
+        
+        <TextInput
+          style={[
+            styles.textInput, 
+            { 
+              backgroundColor: colors.surfaceAlt, 
+              color: colors.text,
+              borderColor: colors.border
+            }
+          ]}
+          multiline={true}
+          numberOfLines={4}
+          placeholder="What is weighing on your mind?"
+          placeholderTextColor={colors.textMuted}
+          value={thoughtDiary}
+          onChangeText={setThoughtDiary}
+          textAlignVertical="top"
+        />
+      </Card>      
 
       <Button title={existingEntry ? "Update Entry" : "Save Entry"} onPress={handleSave} style={{ marginTop: spacing.lg }} />
     </ScrollView>
@@ -230,5 +287,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 8,
     marginHorizontal: spacing.xs,
-  }
+  },
+  textInput: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: spacing.md,
+    fontSize: 16,
+    minHeight: 100,
+    marginTop: spacing.sm,
+  },
 });

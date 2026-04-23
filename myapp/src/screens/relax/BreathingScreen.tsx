@@ -72,11 +72,11 @@ export default function BreathingScreen() {
     scale.value = withRepeat(
       withSequence(
         // Inhale 4s
-        withTiming(1.6, { duration: 4000, easing: Easing.inOut(Easing.sine) }, (finished) => { if (finished) runOnJS(updatePhase)('hold'); }),
+        withTiming(1.6, { duration: 4000, easing: Easing.inOut(Easing.sin) }, (finished) => { if (finished) runOnJS(updatePhase)('hold'); }),
         // Hold 4s
         withTiming(1.6, { duration: 4000 }),
         // Exhale 4s (using negative timing to sync text)
-        withTiming(1.0, { duration: 4000, easing: Easing.inOut(Easing.sine) }, (finished) => { if (finished) runOnJS(updatePhase)('hold'); }),
+        withTiming(1.0, { duration: 4000, easing: Easing.inOut(Easing.sin) }, (finished) => { if (finished) runOnJS(updatePhase)('hold'); }),
         // Hold 4s
         withTiming(1.0, { duration: 4000 }, (finished) => { if (finished) runOnJS(updatePhase)('inhale', true); }) // add breath at end
       ),

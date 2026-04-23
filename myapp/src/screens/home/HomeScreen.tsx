@@ -13,7 +13,6 @@ import { CompositeScreenProps, useNavigation } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, withDelay, Easing, runOnJS } from 'react-native-reanimated';
 import Svg, { Path, Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
-import { Haptics } from 'expo-haptics'; // Will require installing but we can omit if not strictly imported or just ignore till later, wait, prompt says "Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)". I'll import from expo-haptics
 import * as HapticsAPI from 'expo-haptics';
 
 type Props = CompositeScreenProps<
@@ -77,12 +76,11 @@ export default function HomeScreen({ navigation }: Props) {
     moodTranslateY.value = withTiming(-20, { duration: 400 }, (finished) => {
       if (finished) {
         runOnJS(addEntry)({
-          id: Date.now().toString(),
           date: today,
-          moodScore: val,
+          moodLevel: val,
           symptoms: [],
           sleepHours: 7,
-          notes: ''
+          sleepQuality: 'okay'
         });
       }
     });
@@ -94,7 +92,7 @@ export default function HomeScreen({ navigation }: Props) {
     d.setDate(d.getDate() - (6 - i));
     const dStr = d.toISOString().split('T')[0];
     const entry = entries.find(e => e.date === dStr);
-    return entry ? entry.moodScore : null;
+    return entry ? entry.moodLevel : null;
   });
 
   const getMoodColor = (score: number | null) => {

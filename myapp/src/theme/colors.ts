@@ -11,8 +11,12 @@ export const darkColors = {
   accent: '#A8957A',
   accentDeep: '#7D6455',
   accentSoft: '#475569',
+  accentBlue: '#3B82F6',
+
   calm: '#4B5E54',
   calmLight: '#1B2722',
+  calmDark: '#0D1B14',
+
   uplift: '#B08851',
   upliftLight: '#3B2D19',
   reflect: '#4F6174',
@@ -39,8 +43,12 @@ export const lightColors = {
   accent: '#A8957A',
   accentDeep: '#7D6455',
   accentSoft: '#C9B8A8',
+  accentBlue: '#3B82F6',
+
   calm: '#9DB5A0',
   calmLight: '#D4E4D8',
+  calmDark: '#6A876E',
+
   uplift: '#D4A96A',
   upliftLight: '#F0E0C4',
   reflect: '#9BAAB8',
