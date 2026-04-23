@@ -53,12 +53,20 @@ export default function BreathingScreen() {
     if (addBreath) setBreaths(b => b + 1);
   };
 
-  const ringStyles = [0.8, 0.5, 0.2].map((op) => {
-    return useAnimatedStyle(() => ({
-      transform: [{ scale: scale.value }],
-      opacity: (scale.value - 1) / 0.6 * op + 0.1
-    }));
-  });
+  const ringStyle1 = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    opacity: (scale.value - 1) / 0.6 * 0.8 + 0.1
+  }));
+
+  const ringStyle2 = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    opacity: (scale.value - 1) / 0.6 * 0.5 + 0.1
+  }));
+
+  const ringStyle3 = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    opacity: (scale.value - 1) / 0.6 * 0.2 + 0.1
+  }));
 
   const runBreathingCycle = () => {
     scale.value = withRepeat(
@@ -118,8 +126,8 @@ export default function BreathingScreen() {
 
       <View style={styles.animationContainer}>
         {/* Concentric Decorative Rings */}
-        <Animated.View style={[styles.ring, { borderColor: colors.calmDark || colors.calm, borderWidth: 1, width: 220, height: 220, borderRadius: 110 }, ringStyles[2]]} />
-        <Animated.View style={[styles.ring, { borderColor: colors.calmDark || colors.calm, borderWidth: 2, width: 180, height: 180, borderRadius: 90 }, ringStyles[1]]} />
+        <Animated.View style={[styles.ring, { borderColor: colors.calmDark || colors.calm, borderWidth: 1, width: 220, height: 220, borderRadius: 110 }, ringStyle3]} />
+        <Animated.View style={[styles.ring, { borderColor: colors.calmDark || colors.calm, borderWidth: 2, width: 180, height: 180, borderRadius: 90 }, ringStyle2]} />
         
         {/* Main animated circle */}
         <Animated.View style={[ styles.circle, { backgroundColor: colors.calmLight }, animatedStyle ]}>

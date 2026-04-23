@@ -140,7 +140,7 @@ export default function HomeScreen({ navigation }: Props) {
 
       {/* Daily Affirmation Card */}
       <View style={[styles.affirmationCard, { backgroundColor: colors.surfaceAlt, borderColor: colors.borderLight }]}>
-        <Text style={[styles.quoteGlyph, { color: colors.accentSoft }]}>"</Text>
+        <Text style={[styles.quoteGlyph, { color: colors.accentSoft }]}>&quot;</Text>
         <Text style={[styles.affirmationText, { color: colors.text }]}>{dailyAffirmation}</Text>
       </View>
 
