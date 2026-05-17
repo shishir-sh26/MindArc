@@ -132,7 +132,7 @@ export default function HomeScreen({ navigation }: Props) {
             style={[styles.profileBtn, { paddingHorizontal: wp(2.5), backgroundColor: isDark ? 'rgba(17,30,15,0.85)' : 'rgba(232,242,220,0.85)', borderColor: colors.border }]}
             onPress={() => setShowSettings(true)}
           >
-            <Ionicons name="settings-outline" size={20} color={colors.text} />
+            <Ionicons name="menu-outline" size={20} color={colors.text} />
           </TouchableOpacity>
         </View>
       </AnimatedView>

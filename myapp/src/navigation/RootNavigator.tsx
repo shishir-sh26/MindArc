@@ -19,6 +19,7 @@ import BreathingScreen from '../screens/relax/BreathingScreen';
 import NatureSoundsScreen from '../screens/relax/NatureSoundsScreen';
 import YogaPlayerScreen from '../screens/activity/YogaPlayerScreen';
 import CrisisScreen from '../screens/crisis/CrisisScreen';
+import UserDetailsScreen from '../screens/profile/UserDetailsScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -68,6 +69,7 @@ export const RootNavigator = () => {
               <Stack.Screen name="NatureSounds" component={NatureSoundsScreen} options={{ title: 'Nature Sounds' }} />
               <Stack.Screen name="YogaPlayer" component={YogaPlayerScreen} options={({ route }) => ({ title: route.params.title })} />
               <Stack.Screen name="Crisis" component={CrisisScreen} options={{ title: 'Emergency Contacts', presentation: 'modal' }} />
+              <Stack.Screen name="UserDetails" component={UserDetailsScreen} options={{ headerShown: false }} />
             </>
           ) : (
             // Unauthenticated Stack

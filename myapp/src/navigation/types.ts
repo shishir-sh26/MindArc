@@ -20,4 +20,5 @@ export type RootStackParamList = {
   NatureSounds: undefined;
   YogaPlayer: { videoUrl: string, title: string };
   Crisis: undefined;
+  UserDetails: undefined;
 };

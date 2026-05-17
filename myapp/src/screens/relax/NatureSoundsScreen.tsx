@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { ForestBackground } from '../../components/common/ForestBackground';
-import { Audio } from 'expo-av';
 import { useTheme } from '../../hooks/useTheme';
 import { spacing } from '../../../theme/spacing';
 import { Ionicons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import { useTranslation } from 'react-i18next';
+import { useAudioStore } from '../../store/audioStore';
 
 // Using local audio files added in myapp/assets/images
 const SOUND_OPTIONS = [
@@ -18,135 +18,99 @@ const SOUND_OPTIONS = [
 export default function NatureSoundsScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
-  
-  const [sound, setSound] = useState<Audio.Sound | null>(null);
-  const [activeSoundId, setActiveSoundId] = useState<string | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [volume, setVolume] = useState(0.5);
 
-  async function playSound(file: any, id: string) {
-    if (sound) {
-      await sound.unloadAsync();
-      setSound(null);
-    }
-
-    try {
-      const { sound: newSound } = await Audio.Sound.createAsync(
-        file,
-        { shouldPlay: true, isLooping: true, volume }
-      );
-      setSound(newSound);
-      setActiveSoundId(id);
-      setIsPlaying(true);
-    } catch (e) {
-      console.warn("Couldn't load sound", e);
-    }
-  }
-
-  async function togglePlayPause() {
-    if (!sound) return;
-    
-    if (isPlaying) {
-      await sound.pauseAsync();
-      setIsPlaying(false);
-    } else {
-      await sound.playAsync();
-      setIsPlaying(true);
-    }
-  }
-
-  async function changeVolume(val: number) {
-    setVolume(val);
-    if (sound) {
-      await sound.setVolumeAsync(val);
-    }
-  }
-
-  useEffect(() => {
-    return sound
-      ? () => {
-          sound.unloadAsync();
-        }
-      : undefined;
-  }, [sound]);
+  const {
+    activeSoundId,
+    isPlaying,
+    volume,
+    playSound,
+    togglePlayPause,
+    changeVolume,
+    stopAndUnload
+  } = useAudioStore();
 
   return (
     <View style={[styles.outerContainer, { backgroundColor: colors.background }]}>
       <ForestBackground bgHeightRatio={0.40} showBottomPlants />
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]}>{t('sounds.title')}</Text>
-        <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-          {t('sounds.subtitle')}
-        </Text>
-      </View>
-
-      <View style={styles.grid}>
-        {SOUND_OPTIONS.map(opt => {
-          const isActive = activeSoundId === opt.id;
-          return (
-            <TouchableOpacity 
-              key={opt.id}
-              style={[
-                styles.soundCard, 
-                { 
-                  backgroundColor: isActive ? colors.accentSoft : colors.surface,
-                  borderColor: isActive ? colors.accent : colors.border
-                }
-              ]}
-              onPress={() => {
-                if (isActive) togglePlayPause();
-                else playSound(opt.file, opt.id);
-              }}
-            >
-              <Ionicons 
-                name={opt.icon as any} 
-                size={42} 
-                color={isActive ? colors.accent : colors.textMuted} 
-              />
-              <Text style={[styles.soundTitle, { color: isActive ? colors.text : colors.textMuted }]}>
-                {t(`sounds.options.${opt.id}`)}
-              </Text>
-              
-              {isActive && (
-                <View style={styles.activeIndicator}>
-                  <Ionicons name={isPlaying ? "pause" : "play"} size={16} color={colors.accent} />
-                </View>
-              )}
-            </TouchableOpacity>
-          );
-        })}
-      </View>
-
-      {/* Media Player Controls */}
-      {activeSoundId && (
-        <View style={[styles.playerContainer, { backgroundColor: colors.surfaceAlt }]}>
-          <Text style={[styles.playerTitle, { color: colors.text }]}>
-            {t('sounds.nowPlaying')} {t(`sounds.options.${activeSoundId}`)}
+        <View style={styles.header}>
+          <Text style={[styles.title, { color: colors.text }]}>{t('sounds.title')}</Text>
+          <Text style={[styles.subtitle, { color: colors.textMuted }]}>
+            {t('sounds.subtitle')}
           </Text>
-          
-          <View style={styles.controlsRow}>
-            <TouchableOpacity onPress={togglePlayPause} style={[styles.playBtn, { backgroundColor: colors.accent }]}>
-              <Ionicons name={isPlaying ? "pause" : "play"} size={28} color="#fff" />
-            </TouchableOpacity>
+        </View>
+
+        <View style={styles.grid}>
+          {SOUND_OPTIONS.map(opt => {
+            const isActive = activeSoundId === opt.id;
+            return (
+              <TouchableOpacity 
+                key={opt.id}
+                style={[
+                  styles.soundCard, 
+                  { 
+                    backgroundColor: isActive ? colors.accentSoft : colors.surface,
+                    borderColor: isActive ? colors.accent : colors.border
+                  }
+                ]}
+                onPress={() => {
+                  if (isActive) togglePlayPause();
+                  else playSound(opt.file, opt.id);
+                }}
+              >
+                <Ionicons 
+                  name={opt.icon as any} 
+                  size={42} 
+                  color={isActive ? colors.accent : colors.textMuted} 
+                />
+                <Text style={[styles.soundTitle, { color: isActive ? colors.text : colors.textMuted }]}>
+                  {t(`sounds.options.${opt.id}`)}
+                </Text>
+                
+                {isActive && (
+                  <View style={styles.activeIndicator}>
+                    <Ionicons name={isPlaying ? "pause" : "play"} size={16} color={colors.accent} />
+                  </View>
+                )}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {/* Media Player Controls */}
+        {activeSoundId && (
+          <View style={[styles.playerContainer, { backgroundColor: colors.surfaceAlt }]}>
+            <Text style={[styles.playerTitle, { color: colors.text }]}>
+              {t('sounds.nowPlaying')} {t(`sounds.options.${activeSoundId}`)}
+            </Text>
             
-            <View style={styles.volumeContainer}>
-              <Ionicons name="volume-low" size={20} color={colors.textMuted} />
-              <Slider
-                style={styles.slider}
-                minimumValue={0}
-                maximumValue={1}
-                value={volume}
-                onValueChange={changeVolume}
-                minimumTrackTintColor={colors.accent}
-                maximumTrackTintColor={colors.border}
-                thumbTintColor={colors.accentBlue}
-              />
-              <Ionicons name="volume-high" size={20} color={colors.textMuted} />
+            <View style={styles.controlsRow}>
+              <View style={styles.buttonGroup}>
+                <TouchableOpacity onPress={togglePlayPause} style={[styles.playBtn, { backgroundColor: colors.accent }]}>
+                  <Ionicons name={isPlaying ? "pause" : "play"} size={26} color="#fff" />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={stopAndUnload} style={[styles.playBtn, { backgroundColor: colors.danger }]}>
+                  <Ionicons name="stop" size={26} color="#fff" />
+                </TouchableOpacity>
+              </View>
+              
+              <View style={styles.volumeContainer}>
+                <Ionicons name="volume-low" size={20} color={colors.textMuted} />
+                <Slider
+                  style={styles.slider}
+                  minimumValue={0}
+                  maximumValue={1}
+                  value={volume}
+                  onValueChange={changeVolume}
+                  minimumTrackTintColor={colors.accent}
+                  maximumTrackTintColor={colors.border}
+                  thumbTintColor={colors.accentBlue}
+                />
+                <Ionicons name="volume-high" size={20} color={colors.textMuted} />
+              </View>
             </View>
           </View>
-        </View>
-      )}
+        )}
       </ScrollView>
     </View>
   );
@@ -200,10 +164,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  buttonGroup: {
+    flexDirection: 'row',
+    gap: 10,
+  },
   playBtn: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -211,7 +179,7 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    marginLeft: spacing.xl,
+    marginLeft: spacing.lg,
   },
   slider: {
     flex: 1,

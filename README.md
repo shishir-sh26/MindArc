@@ -56,6 +56,10 @@ MentalHealthApp/
     *   Vibrant, tailor-made visual profiles: custom Forest designs for light mode and soft, premium deep space gradients for dark mode.
 *   **Crisis Emergency Hub**:
     *   Provides immediate, direct-call buttons linking users to free national mental health lifelines.
+*   **User Profile Management (Cloud Sync)**:
+    *   Fully customizable user profiles built directly inside the main settings panel.
+    *   Users can update their **Display Name** and multiline **Personal Bio** directly in the app.
+    *   Information is securely transmitted and stored in Firebase Firestore under the `users` collection, linked via their unique authenticated UID.
 
 ### 🤖 2. Intelligent Backend (`backend`)
 *   **AI Wellness Assessment (Lifestyle Coach)**:
