@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useTheme } from '../../hooks/useTheme';
 import { Card } from '../../components/common/Card';
-import { spacing } from '../../theme/spacing';
+import { spacing } from '../../../theme/spacing';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList, BottomTabParamList } from '../../navigation/types';

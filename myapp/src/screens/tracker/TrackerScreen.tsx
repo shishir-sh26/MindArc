@@ -5,7 +5,7 @@ import { useTheme } from '../../hooks/useTheme';
 import { useMoodStore } from '../../store/moodStore';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
-import { spacing } from '../../theme/spacing';
+import { spacing } from '../../../theme/spacing';
 import Slider from '@react-native-community/slider';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList, BottomTabParamList } from '../../navigation/types';

@@ -12,8 +12,8 @@ import Animated, {
   cancelAnimation
 } from 'react-native-reanimated';
 import { useTheme } from '../../hooks/useTheme';
-import { spacing, radii } from '../../theme/spacing';
-import { typography } from '../../theme/typography';
+import { spacing, radii } from '../../../theme/spacing';
+import { typography } from '../../../theme/typography';
 import { hp, wp, rf } from '../../utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import * as HapticsAPI from 'expo-haptics';

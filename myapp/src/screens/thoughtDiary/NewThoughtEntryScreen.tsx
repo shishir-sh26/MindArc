@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TextInput, KeyboardAvoidingView, Pl
 import { useTheme } from '../../hooks/useTheme';
 import { useThoughtStore } from '../../store/thoughtStore';
 import { Button } from '../../components/common/Button';
-import { spacing } from '../../theme/spacing';
+import { spacing } from '../../../theme/spacing';
 import Slider from '@react-native-community/slider';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';

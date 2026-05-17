@@ -1,11 +1,11 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TouchableWithoutFeedback } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TouchableWithoutFeedback, Image } from 'react-native';
 import { useTheme } from '../../hooks/useTheme';
 import { getGreeting } from '../../utils/dateHelpers';
 import { AFFIRMATIONS } from '../../utils/constants';
 import { useMoodStore } from '../../store/moodStore';
-import { spacing, radii } from '../../theme/spacing';
-import { typography } from '../../theme/typography';
+import { spacing, radii } from '../../../theme/spacing';
+import { typography } from '../../../theme/typography';
 import { wp, hp, rf } from '../../utils/responsive';
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { BottomTabParamList, RootStackParamList } from '../../navigation/types';
@@ -14,6 +14,9 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, withDelay, Easing, runOnJS } from 'react-native-reanimated';
 import Svg, { Path, Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 import * as HapticsAPI from 'expo-haptics';
+import { Ionicons } from '@expo/vector-icons';
+import YoutubeIframe from 'react-native-youtube-iframe';
+import { yogaContent } from '../../data/yogaContent';
 
 type Props = CompositeScreenProps<
   BottomTabScreenProps<BottomTabParamList, 'Home'>,
@@ -33,8 +36,9 @@ const MOODS = [
 ];
 
 export default function HomeScreen({ navigation }: Props) {
-  const { colors, toggleTheme } = useTheme();
+  const { colors, isDark, toggleTheme } = useTheme();
   const { entries, streak, addEntry } = useMoodStore();
+  const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
   
   const today = new Date().toISOString().split('T')[0];
   const todaysMood = entries.find(e => e.date === today);
@@ -86,22 +90,6 @@ export default function HomeScreen({ navigation }: Props) {
     });
   };
 
-  // Past 7 days calculation
-  const past7Days = Array.from({length: 7}).map((_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() - (6 - i));
-    const dStr = d.toISOString().split('T')[0];
-    const entry = entries.find(e => e.date === dStr);
-    return entry ? entry.moodLevel : null;
-  });
-
-  const getMoodColor = (score: number | null) => {
-    if (!score) return colors.borderLight;
-    if (score >= 4) return colors.success;
-    if (score === 3) return colors.warning;
-    return colors.danger;
-  };
-
   return (
     <ScrollView 
       style={styles.container} 
@@ -111,17 +99,21 @@ export default function HomeScreen({ navigation }: Props) {
       <AnimatedView style={[styles.header, headerAnimatedStyle]}>
         <View style={styles.headerLeft}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={[styles.greeting, { color: colors.text }]}>good morning, friend</Text>
+            <Text style={[styles.greeting, { color: colors.text }]}>{greeting}, friend</Text>
             {/* Tiny botanical SVG */}
             <Svg width="24" height="24" viewBox="0 0 24 24" style={{ marginLeft: 8 }}>
               <Path d="M12 22V10M12 10C8 10 4 14 4 14C4 14 8 18 12 18M12 10C16 10 20 6 20 6C20 6 16 2 12 2" stroke={colors.accent} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
             </Svg>
           </View>
-          <Text style={[styles.subtext, { color: colors.textMuted }]}>{dailyAffirmation}</Text>
         </View>
-        <TouchableOpacity style={styles.profileBtn} onPress={toggleTheme}>
-          <Text style={{ fontFamily: typography.mono, fontSize: rf(12), color: colors.accentDeep }}>{streak} 🔥</Text>
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+          <TouchableOpacity style={[styles.profileBtn, { paddingHorizontal: wp(2.5), backgroundColor: isDark ? colors.surface : '#F5EFE7', borderColor: colors.border }]} onPress={toggleTheme}>
+            <Text style={{ fontSize: rf(14) }}>{isDark ? '🌙' : '☀️'}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.profileBtn, { backgroundColor: isDark ? colors.surface : '#F5EFE7', borderColor: colors.border }]} onPress={() => navigation.navigate('TrackerHistory')}>
+            <Text style={{ fontFamily: typography.mono, fontSize: rf(12), color: isDark ? colors.text : colors.accentDeep }}>{streak} 🔥</Text>
+          </TouchableOpacity>
+        </View>
       </AnimatedView>
 
       {/* Mood Banner */}
@@ -138,102 +130,140 @@ export default function HomeScreen({ navigation }: Props) {
 
       {/* Daily Affirmation Card */}
       <View style={[styles.affirmationCard, { backgroundColor: colors.surfaceAlt, borderColor: colors.borderLight }]}>
-        <Text style={[styles.quoteGlyph, { color: colors.accentSoft }]}>&quot;</Text>
+        <Text style={[styles.quoteGlyph, { color: colors.text, opacity: 0.15 }]}>&quot;</Text>
         <Text style={[styles.affirmationText, { color: colors.text }]}>{dailyAffirmation}</Text>
       </View>
 
-      {/* Quick Access Grid */}
-      <View style={styles.grid}>
-        <GridCard 
-          title="Breathe" 
-          subtitle="take a mindful pause" 
-          colorLight={colors.calmLight} 
-          colorDark={colors.calm} 
-          delay={0}
-          onPress={() => {
-            HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Light);
-            navigation.navigate('Relax');
-          }}
-          icon={
-            <Svg width="40" height="40" viewBox="0 0 24 24" fill="none">
-              <Path d="M12 4C7.58 4 4 7.58 4 12c0 4.42 3.58 8 8 8s8-3.58 8-8c0-4.42-3.58-8-8-8zm-1 12.5v-3H9v-3h2V8.5h2v2h2v3h-2v3h-2z" fill={colors.calm} />
-            </Svg>
-          }
-        />
-        <GridCard 
-          title="Reflect" 
-          subtitle="capture your thoughts" 
-          colorLight={colors.reflectLight} 
-          colorDark={colors.reflect} 
-          delay={60}
-          onPress={() => {
-            HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Light);
-            navigation.navigate('ThoughtDiary');
-          }}
-          icon={
-            <Svg width="40" height="40" viewBox="0 0 24 24" fill="none">
-              <Path d="M21 11c0 5.523-4.477 10-10 10S1 16.523 1 11 5.477 1 11 1c1.23 0 2.408.223 3.5.626-2.115 1.704-3.5 4.312-3.5 7.374 0 3.062 1.385 5.67 3.5 7.374A9.957 9.957 0 0021 11z" fill={colors.reflect} />
-            </Svg>
-          }
-        />
-        <GridCard 
-          title="Move" 
-          subtitle="stretch & flow" 
-          colorLight={colors.upliftLight} 
-          colorDark={colors.uplift} 
-          delay={120}
-          onPress={() => {
-            HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Light);
-            navigation.navigate('Activity');
-          }}
-          icon={
-            <Svg width="40" height="40" viewBox="0 0 24 24" fill="none">
-              <Circle cx="12" cy="12" r="5" fill={colors.uplift} />
-              <Path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" stroke={colors.uplift} strokeWidth="2" strokeLinecap="round" />
-            </Svg>
-          }
-        />
-        <GridCard 
-          title="Learn" 
-          subtitle="mental wellness tools" 
-          colorLight={colors.learnLight} 
-          colorDark={colors.learn} 
-          delay={180}
-          onPress={() => {
-            HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Light);
-            navigation.navigate('Learn');
-          }}
-          icon={
-            <Svg width="40" height="40" viewBox="0 0 24 24" fill="none">
-              <Path d="M12 14.5l-9-4 9-4 9 4-9 4z" fill={colors.learn} />
-              <Path d="M12 17.5l-9-4v-4l9 4 9-4v4l-9 4z" fill={colors.learn} opacity={0.6}/>
-              <Path d="M12 20.5l-9-4v-4l9 4 9-4v4l-9 4z" fill={colors.learn} opacity={0.3}/>
-            </Svg>
-          }
-        />
-      </View>
+      {/* Feature Sections */}
+      <View style={{ marginBottom: hp(4) }}>
+        
+        <SectionTitle title="Relaxation & Calming" color={colors.text} />
+        <View style={styles.grid}>
+          <GridCard 
+            title="Breathing" subtitle="guided exercises" 
+            colorLight={colors.calmLight} colorDark={colors.calm} delay={0} 
+            onPress={() => { HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Light); navigation.navigate('Breathing'); }}
+            icon={<Svg width="40" height="40" viewBox="0 0 24 24" fill="none"><Path d="M12 4C7.58 4 4 7.58 4 12c0 4.42 3.58 8 8 8s8-3.58 8-8c0-4.42-3.58-8-8-8zm-1 12.5v-3H9v-3h2V8.5h2v2h2v3h-2v3h-2z" fill={isDark ? colors.text : colors.calm} /></Svg>}
+          />
+          <GridCard 
+            title="Nature Sounds" subtitle="calm your mind" 
+            colorLight={colors.calmLight} colorDark={colors.calm} delay={30} 
+            onPress={() => { HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Light); navigation.navigate('NatureSounds'); }}
+            icon={<Svg width="40" height="40" viewBox="0 0 24 24" fill="none"><Path d="M9 18V5l12-2v13" stroke={isDark ? colors.text : colors.calm} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><Circle cx="6" cy="18" r="3" fill={isDark ? colors.text : colors.calm}/><Circle cx="18" cy="16" r="3" fill={isDark ? colors.text : colors.calm}/></Svg>}
+          />
+          <GridCard 
+            title="Relax Hub" subtitle="all relaxing tools" 
+            colorLight={colors.calmLight} colorDark={colors.calm} delay={60} 
+            onPress={() => { HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Light); navigation.navigate('Relax'); }}
+            icon={<Svg width="40" height="40" viewBox="0 0 24 24" fill="none"><Circle cx="12" cy="12" r="9" stroke={isDark ? colors.text : colors.calm} strokeWidth="2" strokeDasharray="4 4" /></Svg>}
+          />
+        </View>
 
-      {/* Streak + Progress Row */}
-      <TouchableOpacity 
-        style={[styles.progressRow, { backgroundColor: colors.surface }]}
-        activeOpacity={0.8}
-        onPress={() => navigation.navigate('TrackerHistory')}
-      >
-        <View style={styles.streakInfo}>
-          <Text style={[styles.streakCount, { color: colors.text }]}>{streak} day streak</Text>
-          <Text style={[styles.streakSub, { color: colors.textMuted }]}>Weekly Mood</Text>
+        <SectionTitle title="Tracking & Journaling" color={colors.text} />
+        <View style={styles.grid}>
+          <GridCard 
+            title="Thought Diary" subtitle="view past entries" 
+            colorLight={colors.reflectLight} colorDark={colors.reflect} delay={90} 
+            onPress={() => { HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Light); navigation.navigate('ThoughtDiary'); }}
+            icon={<Svg width="40" height="40" viewBox="0 0 24 24" fill="none"><Path d="M21 11c0 5.523-4.477 10-10 10S1 16.523 1 11 5.477 1 11 1c1.23 0 2.408.223 3.5.626-2.115 1.704-3.5 4.312-3.5 7.374 0 3.062 1.385 5.67 3.5 7.374A9.957 9.957 0 0021 11z" fill={isDark ? colors.text : colors.reflect} /></Svg>}
+          />
+          <GridCard 
+            title="New Entry" subtitle="capture a thought" 
+            colorLight={colors.reflectLight} colorDark={colors.reflect} delay={120} 
+            onPress={() => { HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Light); navigation.navigate('NewThoughtEntry'); }}
+            icon={<Svg width="40" height="40" viewBox="0 0 24 24" fill="none"><Path d="M12 4v16M4 12h16" stroke={isDark ? colors.text : colors.reflect} strokeWidth="2" strokeLinecap="round" /></Svg>}
+          />
+          <GridCard 
+            title="Mood History" subtitle="view trends" 
+            colorLight={colors.reflectLight} colorDark={colors.reflect} delay={150} 
+            onPress={() => { HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Light); navigation.navigate('TrackerHistory'); }}
+            icon={<Svg width="40" height="40" viewBox="0 0 24 24" fill="none"><Path d="M4 20h16M6 16v4M12 10v10M18 4v16" stroke={isDark ? colors.text : colors.reflect} strokeWidth="2" strokeLinecap="round" /></Svg>}
+          />
+          <GridCard 
+            title="Tracker Hub" subtitle="all tracking tools" 
+            colorLight={colors.reflectLight} colorDark={colors.reflect} delay={180} 
+            onPress={() => { HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Light); navigation.navigate('Track'); }}
+            icon={<Svg width="40" height="40" viewBox="0 0 24 24" fill="none"><Circle cx="12" cy="12" r="8" stroke={isDark ? colors.text : colors.reflect} strokeWidth="2"/><Path d="M12 4v8l4 4" stroke={isDark ? colors.text : colors.reflect} strokeWidth="2" strokeLinecap="round"/></Svg>}
+          />
         </View>
-        <View style={styles.dotsContainer}>
-          {past7Days.map((score, i) => (
-            <View key={i} style={[styles.dot, { backgroundColor: getMoodColor(score) }]} />
-          ))}
+
+        <SectionTitle title="Activity & Movement" color={colors.text} />
+        
+        {yogaContent.slice(0, 2).map(yoga => (
+          <View 
+            key={yoga.id} 
+            style={[styles.yogaCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
+          >
+            {activeVideoId === yoga.id ? (
+              <View style={{ width: '100%' }}>
+                <YoutubeIframe
+                  height={220}
+                  videoId={yoga.videoId}
+                  play={true}
+                />
+                <TouchableOpacity onPress={() => setActiveVideoId(null)} style={{ padding: spacing.sm, alignItems: 'center', borderTopWidth: 1, borderTopColor: colors.border }}>
+                  <Text style={{ color: colors.accent, fontWeight: '600' }}>Close Video</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity 
+                style={{ flexDirection: 'row', alignItems: 'center', width: '100%' }}
+                onPress={() => setActiveVideoId(yoga.id)}
+              >
+                <Image source={{ uri: yoga.thumbnailUrl }} style={styles.yogaThumb} />
+                <View style={styles.yogaInfo}>
+                  <Text style={[styles.yogaTitle, { color: colors.text }]}>{yoga.title}</Text>
+                  <View style={{ flexDirection: 'row', gap: 4 }}>
+                    <Text style={[styles.yogaBadge, { backgroundColor: colors.surfaceAlt, color: colors.textMuted }]}>
+                      {yoga.duration}
+                    </Text>
+                    <Text style={[styles.yogaBadge, { backgroundColor: colors.surfaceAlt, color: colors.textMuted }]}>
+                      {yoga.level}
+                    </Text>
+                  </View>
+                </View>
+                <Ionicons name="play-circle" size={32} color={colors.accent} style={{ padding: spacing.sm }} />
+              </TouchableOpacity>
+            )}
+          </View>
+        ))}
+
+        <TouchableOpacity 
+          style={[styles.moreActivityBtn, { borderColor: colors.border, backgroundColor: colors.surface }]} 
+          onPress={() => { HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Light); navigation.navigate('Activity'); }}
+        >
+          <Text style={{ color: colors.text, fontWeight: '600' }}>View More Activities & Steps</Text>
+          <Ionicons name="arrow-forward" size={20} color={colors.text} />
+        </TouchableOpacity>
+
+        <SectionTitle title="Education & Support" color={colors.text} />
+        <View style={styles.grid}>
+          <GridCard 
+            title="Learn" subtitle="mental wellness" 
+            colorLight={colors.learnLight} colorDark={colors.learn} delay={240} 
+            onPress={() => { HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Light); navigation.navigate('Learn'); }}
+            icon={<Svg width="40" height="40" viewBox="0 0 24 24" fill="none"><Path d="M12 14.5l-9-4 9-4 9 4-9 4z" fill={isDark ? colors.text : colors.learn} /><Path d="M12 17.5l-9-4v-4l9 4 9-4v4l-9 4z" fill={isDark ? colors.text : colors.learn} opacity={0.6}/><Path d="M12 20.5l-9-4v-4l9 4 9-4v4l-9 4z" fill={isDark ? colors.text : colors.learn} opacity={0.3}/></Svg>}
+          />
+          <GridCard 
+            title="Crisis Support" subtitle="get help now" 
+            colorLight={colors.danger + '22'} colorDark={colors.danger} delay={270} 
+            onPress={() => { HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Light); navigation.navigate('Crisis'); }}
+            icon={<Svg width="40" height="40" viewBox="0 0 24 24" fill="none"><Path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" stroke={isDark ? '#F87171' : colors.danger} strokeWidth="2"/><Path d="M12 8v4" stroke={isDark ? '#F87171' : colors.danger} strokeWidth="2" strokeLinecap="round"/><Circle cx="12" cy="16" r="1.5" fill={isDark ? '#F87171' : colors.danger}/></Svg>}
+          />
         </View>
-      </TouchableOpacity>
+
+      </View>
     </ScrollView>
   );
 }
 
 // Subcomponents
+
+const SectionTitle = ({ title, color }: { title: string, color: string }) => (
+  <Text style={{ fontFamily: typography.display, fontSize: rf(18), fontWeight: '600', color: color, marginBottom: hp(1.5), marginLeft: wp(2), marginTop: hp(2) }}>
+    {title}
+  </Text>
+);
 
 const EmojiButton = ({ emoji, onPress }: { emoji: string, onPress: () => void }) => {
   const scale = useSharedValue(1);
@@ -256,6 +286,7 @@ const GridCard = ({ title, subtitle, colorLight, colorDark, icon, delay, onPress
   const scale = useSharedValue(1);
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(20);
+  const { colors, isDark } = useTheme();
 
   useEffect(() => {
     opacity.value = withDelay(delay, withTiming(1, { duration: 500 }));
@@ -267,6 +298,9 @@ const GridCard = ({ title, subtitle, colorLight, colorDark, icon, delay, onPress
     transform: [{ translateY: translateY.value }, { scale: scale.value }]
   }));
 
+  const textColor = isDark ? colors.text : colorDark;
+  const subTextColor = isDark ? colors.textMuted : colorDark;
+
   return (
     <TouchableWithoutFeedback
       onPressIn={() => { scale.value = withSpring(0.97, { damping: 15, stiffness: 200 }); }}
@@ -275,8 +309,8 @@ const GridCard = ({ title, subtitle, colorLight, colorDark, icon, delay, onPress
     >
       <AnimatedView style={[styles.gridItem, { backgroundColor: colorLight }, animatedStyle]}>
         <View style={styles.iconWrapper}>{icon}</View>
-        <Text style={[styles.gridTitle, { color: colorDark }]}>{title}</Text>
-        <Text style={[styles.gridSub, { color: colorDark, opacity: 0.8 }]}>{subtitle}</Text>
+        <Text style={[styles.gridTitle, { color: textColor }]}>{title}</Text>
+        <Text style={[styles.gridSub, { color: subTextColor, opacity: isDark ? 1 : 0.8 }]}>{subtitle}</Text>
       </AnimatedView>
     </TouchableWithoutFeedback>
   );
@@ -305,19 +339,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     letterSpacing: 0.3,
   },
-  subtext: {
-    fontFamily: typography.body,
-    fontStyle: 'italic',
-    fontSize: rf(16),
-    marginTop: 4,
-  },
   profileBtn: {
-    backgroundColor: '#F5EFE7',
     paddingHorizontal: wp(3),
     paddingVertical: hp(0.8),
     borderRadius: radii.pill,
     borderWidth: 1,
-    borderColor: '#E8DDD3',
   },
   moodBanner: {
     width: wp(90),
@@ -415,41 +441,29 @@ const styles = StyleSheet.create({
     fontSize: rf(13),
     marginTop: 4,
   },
-  progressRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  yogaCard: {
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    borderRadius: 16,
+    borderWidth: 1,
+    overflow: 'hidden',
+    marginBottom: hp(2),
     width: wp(90),
     alignSelf: 'center',
-    borderRadius: 20,
-    padding: hp(2.5),
-    shadowColor: '#C4A882',
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    elevation: 3,
   },
-  streakInfo: {
-    flex: 1,
-  },
-  streakCount: {
-    fontFamily: typography.mono,
-    fontSize: rf(15),
-    fontWeight: '600',
-  },
-  streakSub: {
-    fontFamily: typography.label,
-    fontSize: rf(12),
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginTop: 2,
-  },
-  dotsContainer: {
+  yogaThumb: { width: 100, height: 100 },
+  yogaInfo: { flex: 1, padding: spacing.md },
+  yogaTitle: { fontSize: rf(15), fontWeight: '600', marginBottom: spacing.sm },
+  yogaBadge: { fontSize: rf(11), paddingHorizontal: 8, paddingVertical: 4, borderRadius: 12, overflow: 'hidden' },
+  moreActivityBtn: {
     flexDirection: 'row',
-    gap: 6,
-  },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: wp(90),
+    alignSelf: 'center',
+    padding: hp(2),
+    borderRadius: 16,
+    borderWidth: 1,
+    marginBottom: hp(2),
   }
 });

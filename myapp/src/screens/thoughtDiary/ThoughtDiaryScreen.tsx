@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native
 import { useTheme } from '../../hooks/useTheme';
 import { useThoughtStore, ThoughtEntry } from '../../store/thoughtStore';
 import { Card } from '../../components/common/Card';
-import { spacing } from '../../theme/spacing';
+import { spacing } from '../../../theme/spacing';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';

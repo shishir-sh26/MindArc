@@ -7,8 +7,9 @@ import { useTheme } from '../../hooks/useTheme';
 import { useActivityStore } from '../../store/activityStore';
 import { Card } from '../../components/common/Card';
 import { yogaContent } from '../../data/yogaContent';
-import { spacing } from '../../theme/spacing';
+import { spacing } from '../../../theme/spacing';
 import { Ionicons } from '@expo/vector-icons';
+import YoutubeIframe from 'react-native-youtube-iframe';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList, BottomTabParamList } from '../../navigation/types';
 import { CompositeNavigationProp } from '@react-navigation/native';
@@ -41,6 +42,7 @@ export default function ActivityScreen({ navigation }: Props) {
   const [isPedometerAvailable, setIsPedometerAvailable] = useState('checking');
   const [currentStepCount, setCurrentStepCount] = useState(0);
   const [reminderEnabled, setReminderEnabled] = useState(!!reminderTime);
+  const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
 
   useEffect(() => {
     let subscription: Pedometer.Subscription | null = null;
@@ -180,27 +182,44 @@ export default function ActivityScreen({ navigation }: Props) {
       </Card>
 
       {/* Yoga Section */}
-      <Text style={[styles.sectionTitle, { color: colors.text }]}>Yoga & Stretching</Text>
+      <Text style={[styles.sectionTitle, { color: colors.text }]}>Yoga, Stretching & Exercises</Text>
       {yogaContent.map(yoga => (
-        <TouchableOpacity 
+        <View 
           key={yoga.id} 
-          style={[styles.yogaCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
-          onPress={() => navigation.navigate('YogaPlayer', { videoUrl: yoga.videoUrl, title: yoga.title })}
+          style={[styles.yogaCard, { backgroundColor: colors.surface, borderColor: colors.border, flexDirection: 'column', alignItems: 'stretch' }]}
         >
-          <Image source={{ uri: yoga.thumbnailUrl }} style={styles.yogaThumb} />
-          <View style={styles.yogaInfo}>
-            <Text style={[styles.yogaTitle, { color: colors.text }]}>{yoga.title}</Text>
-            <View style={styles.yogaMeta}>
-              <Text style={[styles.yogaBadge, { backgroundColor: colors.surfaceAlt, color: colors.textMuted }]}>
-                {yoga.duration}
-              </Text>
-              <Text style={[styles.yogaBadge, { backgroundColor: colors.surfaceAlt, color: colors.textMuted }]}>
-                {yoga.level}
-              </Text>
+          {activeVideoId === yoga.id ? (
+            <View style={{ width: '100%' }}>
+              <YoutubeIframe
+                height={220}
+                videoId={yoga.videoId}
+                play={true}
+              />
+              <TouchableOpacity onPress={() => setActiveVideoId(null)} style={{ padding: spacing.sm, alignItems: 'center', borderTopWidth: 1, borderTopColor: colors.border }}>
+                <Text style={{ color: colors.accent, fontWeight: '600' }}>Close Video</Text>
+              </TouchableOpacity>
             </View>
-          </View>
-          <Ionicons name="play-circle" size={32} color={colors.accent} style={{ padding: spacing.sm }} />
-        </TouchableOpacity>
+          ) : (
+            <TouchableOpacity 
+              style={{ flexDirection: 'row', alignItems: 'center', width: '100%' }}
+              onPress={() => setActiveVideoId(yoga.id)}
+            >
+              <Image source={{ uri: yoga.thumbnailUrl }} style={styles.yogaThumb} />
+              <View style={styles.yogaInfo}>
+                <Text style={[styles.yogaTitle, { color: colors.text }]}>{yoga.title}</Text>
+                <View style={styles.yogaMeta}>
+                  <Text style={[styles.yogaBadge, { backgroundColor: colors.surfaceAlt, color: colors.textMuted }]}>
+                    {yoga.duration}
+                  </Text>
+                  <Text style={[styles.yogaBadge, { backgroundColor: colors.surfaceAlt, color: colors.textMuted }]}>
+                    {yoga.level}
+                  </Text>
+                </View>
+              </View>
+              <Ionicons name="play-circle" size={32} color={colors.accent} style={{ padding: spacing.sm }} />
+            </TouchableOpacity>
+          )}
+        </View>
       ))}
 
     </ScrollView>

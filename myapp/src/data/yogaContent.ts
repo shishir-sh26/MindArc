@@ -1,26 +1,52 @@
 export const yogaContent = [
   {
     id: "y1",
-    title: "10-Minute Morning Yoga",
-    duration: "10 min",
-    level: "Beginner",
-    thumbnailUrl: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?q=80&w=600&auto=format&fit=crop",
-    videoUrl: "https://www.youtube.com/embed/VaoV1PrYft4" // example generic URL
-  },
-  {
-    id: "y2",
-    title: "Yoga for Anxiety and Stress",
+    title: "Yoga for Anxiety & Stress",
     duration: "20 min",
     level: "All Levels",
-    thumbnailUrl: "https://images.unsplash.com/photo-1599901860904-17e08622c710?q=80&w=600&auto=format&fit=crop",
-    videoUrl: "https://www.youtube.com/embed/hJbRpHZr_d0" 
+    thumbnailUrl: "https://img.youtube.com/vi/hJbRpHZr_d0/hqdefault.jpg",
+    videoId: "hJbRpHZr_d0" 
   },
   {
     id: "y3",
-    title: "Bedtime Yoga for Deep Sleep",
-    duration: "15 min",
+    title: "Morning Yoga for Energy",
+    duration: "10 min",
     level: "Beginner",
-    thumbnailUrl: "https://images.unsplash.com/photo-1518609878373-06d740f60d8b?q=80&w=600&auto=format&fit=crop",
-    videoUrl: "https://www.youtube.com/embed/v7AYKMP6rOE"
-  }
+    thumbnailUrl: "https://img.youtube.com/vi/4pKly2JojMw/hqdefault.jpg",
+    videoId: "4pKly2JojMw"
+  },
+  {
+    id: "y4",
+    title: "Yoga for Deep Sleep",
+    duration: "20 min",
+    level: "All Levels",
+    thumbnailUrl: "https://img.youtube.com/vi/v7AYKMP6rOE/hqdefault.jpg",
+    videoId: "v7AYKMP6rOE"
+  },
+  
+  {
+    id: "e1",
+    title: "Full Body Stretch for Tension Relief",
+    duration: "15 min",
+    level: "All Levels",
+    thumbnailUrl: "https://img.youtube.com/vi/sTANio_2E0Q/hqdefault.jpg",
+    videoId: "sTANio_2E0Q"
+  },
+  {
+    id: "e2",
+    title: "Somatic Stretching for Nervous System",
+    duration: "10 min",
+    level: "Beginner",
+    thumbnailUrl: "https://img.youtube.com/vi/L_xrDAtykMI/hqdefault.jpg",
+    videoId: "L_xrDAtykMI"
+  },
+  {
+    id: "e3",
+    title: "Quick Cardio for Endorphins & Mood",
+    duration: "15 min",
+    level: "Intermediate",
+    thumbnailUrl: "https://img.youtube.com/vi/ml6cT4AZdqI/hqdefault.jpg",
+    videoId: "ml6cT4AZdqI"
+  },
+
 ];

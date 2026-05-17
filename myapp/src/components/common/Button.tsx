@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ViewStyle, TextStyle } from 'react-native';
 import { useTheme } from '../../hooks/useTheme';
-import { typography } from '../../theme/typography';
+import { typography } from '../../../theme/typography';
 import { hp, wp, rf } from '../../utils/responsive';
 
 interface ButtonProps {

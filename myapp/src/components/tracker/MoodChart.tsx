@@ -3,8 +3,8 @@ import { View, StyleSheet, Text, TouchableWithoutFeedback } from 'react-native';
 import Svg, { Path, Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming, withDelay, Easing, withSpring } from 'react-native-reanimated';
 import { useTheme } from '../../hooks/useTheme';
-import { spacing } from '../../theme/spacing';
-import { typography } from '../../theme/typography';
+import { spacing } from '../../../theme/spacing';
+import { typography } from '../../../theme/typography';
 import { hp, wp } from '../../utils/responsive';
 import * as HapticsAPI from 'expo-haptics';
 
@@ -31,7 +31,7 @@ export const MoodChart = ({ data }: MoodChartProps) => {
   const animatedPathStyle = useAnimatedStyle(() => ({
     strokeDashoffset: progress.value
   }));
-
+c
   const animatedPointStyle = useAnimatedStyle(() => ({
     r: pointScale.value * 4,
     strokeWidth: pointScale.value * 2

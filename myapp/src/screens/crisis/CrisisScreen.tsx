@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, Alert } 
 import { useTheme } from '../../hooks/useTheme';
 import { crisisContacts } from '../../data/crisisContacts';
 import { Card } from '../../components/common/Card';
-import { spacing, radii } from '../../theme/spacing';
+import { spacing, radii } from '../../../theme/spacing';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function CrisisScreen() {

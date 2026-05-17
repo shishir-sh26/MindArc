@@ -4,7 +4,7 @@ import { useTheme } from '../../hooks/useTheme';
 import { useMoodStore, MoodEntry } from '../../store/moodStore';
 import { Card } from '../../components/common/Card';
 import { MoodChart } from '../../components/tracker/MoodChart';
-import { spacing } from '../../theme/spacing';
+import { spacing } from '../../../theme/spacing';
 import { getPast7Days } from '../../utils/dateHelpers';
 
 export default function TrackerHistoryScreen() {

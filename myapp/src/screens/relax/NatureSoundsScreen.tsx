@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { Audio } from 'expo-av';
 import { useTheme } from '../../hooks/useTheme';
-import { spacing } from '../../theme/spacing';
+import { spacing } from '../../../theme/spacing';
 import { Ionicons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 

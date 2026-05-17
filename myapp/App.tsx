@@ -1,6 +1,6 @@
 import React from 'react';
 import { RootNavigator } from './src/navigation/RootNavigator';
-import { ThemeProvider } from './src/theme/ThemeContext';
+import { ThemeProvider } from './theme/ThemeContext';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { LogBox, ActivityIndicator, View } from 'react-native';

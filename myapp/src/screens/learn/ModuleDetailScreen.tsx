@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Linking } from 'react-native';
 import { useTheme } from '../../hooks/useTheme';
-import { spacing, radii } from '../../theme/spacing';
-import { typography } from '../../theme/typography';
+import { spacing, radii } from '../../../theme/spacing';
+import { typography } from '../../../theme/typography';
 import { wp, hp, rf } from '../../utils/responsive';
 import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/types';
