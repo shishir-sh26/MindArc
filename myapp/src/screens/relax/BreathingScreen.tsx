@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal } from 'react-native';
+import { ForestBackground } from '../../components/common/ForestBackground';
 import Animated, { 
   useSharedValue, 
   useAnimatedStyle, 
@@ -17,8 +18,10 @@ import { typography } from '../../../theme/typography';
 import { hp, wp, rf } from '../../utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import * as HapticsAPI from 'expo-haptics';
+import { useTranslation } from 'react-i18next';
 
 export default function BreathingScreen() {
+  const { t } = useTranslation();
   const { colors } = useTheme();
   const [isActive, setIsActive] = useState(false);
   const [phaseText, setPhaseText] = useState('prepare');
@@ -74,7 +77,7 @@ export default function BreathingScreen() {
         // Inhale 4s
         withTiming(1.6, { duration: 4000, easing: Easing.inOut(Easing.sin) }, (finished) => { if (finished) runOnJS(updatePhase)('hold'); }),
         // Hold 4s
-        withTiming(1.6, { duration: 4000 }),
+        withTiming(1.6, { duration: 4000 }, (finished) => { if (finished) runOnJS(updatePhase)('exhale'); }),
         // Exhale 4s (using negative timing to sync text)
         withTiming(1.0, { duration: 4000, easing: Easing.inOut(Easing.sin) }, (finished) => { if (finished) runOnJS(updatePhase)('hold'); }),
         // Hold 4s
@@ -117,10 +120,11 @@ export default function BreathingScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <ForestBackground bgHeightRatio={0.40} showBottomPlants />
       <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]}>Box Breathing</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{t('breathing.title')}</Text>
         <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-          A simple technique to quickly physically calm down. Follow the circle.
+          {t('breathing.subtitle')}
         </Text>
       </View>
 
@@ -132,14 +136,14 @@ export default function BreathingScreen() {
         {/* Main animated circle */}
         <Animated.View style={[ styles.circle, { backgroundColor: colors.calmLight }, animatedStyle ]}>
           <Animated.Text style={[styles.phaseText, { color: colors.calmDark || colors.calm }, textStyle]}>
-            {phaseText}
+            {t(`breathing.${phaseText}`)}
           </Animated.Text>
         </Animated.View>
       </View>
 
       <View style={styles.controls}>
         <Text style={[styles.statsText, { color: colors.textMuted }]}>
-          {breaths > 0 ? `${breaths} breaths • ${Math.floor(timeSpent/60)}m ${timeSpent%60}s` : ''}
+          {breaths > 0 ? `${breaths} ${t('breathing.breathCycles')} • ${Math.floor(timeSpent/60)}m ${timeSpent%60}s` : ''}
         </Text>
         <TouchableOpacity 
           style={[styles.playButton, { backgroundColor: isActive ? colors.surfaceAlt : colors.accent }]}
@@ -147,7 +151,7 @@ export default function BreathingScreen() {
         >
           <Ionicons name={isActive ? "stop" : "play"} size={24} color={isActive ? colors.danger : colors.surface} />
           <Text style={[styles.btnText, { color: isActive ? colors.danger : colors.surface }]}>
-            {isActive ? "End Session" : "Begin"}
+            {isActive ? t('breathing.endSession') : t('breathing.begin')}
           </Text>
         </TouchableOpacity>
       </View>
@@ -156,16 +160,16 @@ export default function BreathingScreen() {
       <Modal visible={showSummary} transparent animationType="fade">
         <View style={styles.modalBg}>
           <View style={[styles.modalCard, { backgroundColor: colors.surfaceAlt, borderColor: colors.border }]}>
-            <Text style={[styles.modalTitle, { color: colors.text }]}>you did well.</Text>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>{t('breathing.youDidWell')}</Text>
             <Text style={[styles.modalStat, { color: colors.textMuted }]}>
-              Completed <Text style={{color: colors.text, fontWeight: 'bold'}}>{breaths}</Text> breath cycles
+              {t('breathing.completed')} <Text style={{color: colors.text, fontWeight: 'bold'}}>{breaths}</Text> {t('breathing.breathCycles')}
             </Text>
             <Text style={[styles.modalStat, { color: colors.textMuted }]}>
-              Total Time: <Text style={{color: colors.text, fontWeight: 'bold'}}>{Math.floor(timeSpent/60)}m {timeSpent%60}s</Text>
+              {t('breathing.totalTime')} <Text style={{color: colors.text, fontWeight: 'bold'}}>{Math.floor(timeSpent/60)}m {timeSpent%60}s</Text>
             </Text>
             
             <TouchableOpacity style={[styles.modalBtn, { backgroundColor: colors.accent }]} onPress={closeSummary}>
-              <Text style={styles.modalBtnText}>Done</Text>
+              <Text style={styles.modalBtnText}>{t('breathing.done')}</Text>
             </TouchableOpacity>
           </View>
         </View>

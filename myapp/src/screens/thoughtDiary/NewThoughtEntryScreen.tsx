@@ -1,5 +1,10 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { ForestBackground } from '../../components/common/ForestBackground';
+import { db, auth } from '../../utils/firebase';
+import { collection, addDoc } from 'firebase/firestore';
+import { Alert } from 'react-native';
 import { useTheme } from '../../hooks/useTheme';
 import { useThoughtStore } from '../../store/thoughtStore';
 import { Button } from '../../components/common/Button';
@@ -11,6 +16,7 @@ import { RootStackParamList } from '../../navigation/types';
 type Props = NativeStackScreenProps<RootStackParamList, 'NewThoughtEntry'>;
 
 export default function NewThoughtEntryScreen({ navigation }: Props) {
+  const { t } = useTranslation();
   const { colors, isDark } = useTheme();
   const addEntry = useThoughtStore((state) => state.addEntry);
 
@@ -22,10 +28,10 @@ export default function NewThoughtEntryScreen({ navigation }: Props) {
   const [evidenceAgainst, setEvidenceAgainst] = useState('');
   const [balancedThought, setBalancedThought] = useState('');
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!situation || !automaticThought || !emotion) return; // Simple validation
 
-    addEntry({
+    const payload = {
       situation,
       automaticThought,
       emotion,
@@ -33,8 +39,25 @@ export default function NewThoughtEntryScreen({ navigation }: Props) {
       evidenceFor,
       evidenceAgainst,
       balancedThought,
-    });
-    navigation.goBack();
+      created_at: new Date().toISOString()
+    };
+
+    try {
+      const user = auth.currentUser;
+      if (user) {
+        await addDoc(collection(db, 'thought_logs'), {
+          ...payload,
+          user_id: user.uid
+        });
+      } else {
+        throw new Error("You must be logged in to save entries.");
+      }
+
+      addEntry(payload);
+      navigation.goBack();
+    } catch (err: any) {
+      Alert.alert("Error", "Could not save entry: " + err.message);
+    }
   };
 
   const inputStyle = [
@@ -47,41 +70,42 @@ export default function NewThoughtEntryScreen({ navigation }: Props) {
   ];
 
   return (
-    <KeyboardAvoidingView 
-      style={{ flex: 1 }} 
+    <KeyboardAvoidingView
+      style={[{ flex: 1 }, { backgroundColor: colors.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
-        <Text style={[styles.heading, { color: colors.text }]}>1. The Situation</Text>
+      <ForestBackground bgHeightRatio={0.36} showBottomPlants={false} />
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <Text style={[styles.heading, { color: colors.text }]}>{t('thoughtDiary.theSituation')}</Text>
         <TextInput
           style={inputStyle}
-          placeholder="What happened? Who, what, when, where?"
+          placeholder={t('thoughtDiary.theSituationPlaceholder')}
           placeholderTextColor={colors.textMuted}
           multiline
           value={situation}
           onChangeText={setSituation}
         />
 
-        <Text style={[styles.heading, { color: colors.text }]}>2. Automatic Thought</Text>
+        <Text style={[styles.heading, { color: colors.text }]}>{t('thoughtDiary.negativeThought')}</Text>
         <TextInput
           style={inputStyle}
-          placeholder="What went through your mind?"
+          placeholder={t('thoughtDiary.negativeThoughtPlaceholder')}
           placeholderTextColor={colors.textMuted}
           multiline
           value={automaticThought}
           onChangeText={setAutomaticThought}
         />
 
-        <Text style={[styles.heading, { color: colors.text }]}>3. Emotion & Intensity</Text>
+        <Text style={[styles.heading, { color: colors.text }]}>{t('thoughtDiary.emotion')}</Text>
         <TextInput
           style={[...inputStyle, { minHeight: 48 }]}
-          placeholder="E.g., Anxious, Sad, Angry"
+          placeholder={t('thoughtDiary.emotionPlaceholder')}
           placeholderTextColor={colors.textMuted}
           value={emotion}
           onChangeText={setEmotion}
         />
         <View style={styles.sliderRow}>
-          <Text style={{ color: colors.textMuted }}>Intensity: {intensity}/10</Text>
+          <Text style={{ color: colors.textMuted }}>{t('thoughtDiary.intensity')}: {intensity}/10</Text>
           <Slider
             style={{ flex: 1, marginLeft: spacing.md }}
             minimumValue={0}
@@ -95,30 +119,30 @@ export default function NewThoughtEntryScreen({ navigation }: Props) {
           />
         </View>
 
-        <Text style={[styles.heading, { color: colors.text }]}>4. Evidence FOR the thought</Text>
+        <Text style={[styles.heading, { color: colors.text }]}>{t('thoughtDiary.evidenceFor')}</Text>
         <TextInput
           style={inputStyle}
-          placeholder="Facts that support this thought"
+          placeholder={t('thoughtDiary.evidenceForPlaceholder')}
           placeholderTextColor={colors.textMuted}
           multiline
           value={evidenceFor}
           onChangeText={setEvidenceFor}
         />
 
-        <Text style={[styles.heading, { color: colors.text }]}>5. Evidence AGAINST the thought</Text>
+        <Text style={[styles.heading, { color: colors.text }]}>{t('thoughtDiary.evidenceAgainst')}</Text>
         <TextInput
           style={inputStyle}
-          placeholder="Facts that contradict this thought"
+          placeholder={t('thoughtDiary.evidenceAgainstPlaceholder')}
           placeholderTextColor={colors.textMuted}
           multiline
           value={evidenceAgainst}
           onChangeText={setEvidenceAgainst}
         />
 
-        <Text style={[styles.heading, { color: colors.text }]}>6. Balanced Thought</Text>
+        <Text style={[styles.heading, { color: colors.text }]}>{t('thoughtDiary.balancedThought')}</Text>
         <TextInput
           style={inputStyle}
-          placeholder="A more realistic, balanced perspective"
+          placeholder={t('thoughtDiary.balancedThoughtPlaceholder')}
           placeholderTextColor={colors.textMuted}
           multiline
           value={balancedThought}
@@ -126,7 +150,7 @@ export default function NewThoughtEntryScreen({ navigation }: Props) {
         />
 
         <Button 
-          title="Save Entry" 
+          title={t('thoughtDiary.saveEntry')} 
           onPress={handleSave} 
           style={styles.saveBtn} 
           disabled={!situation || !automaticThought || !emotion}

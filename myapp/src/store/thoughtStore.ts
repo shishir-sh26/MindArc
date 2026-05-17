@@ -18,6 +18,7 @@ interface ThoughtState {
   entries: ThoughtEntry[];
   addEntry: (entry: Omit<ThoughtEntry, 'id' | 'timestamp'>) => void;
   deleteEntry: (id: string) => void;
+  setEntries: (entries: ThoughtEntry[]) => void;
 }
 
 export const useThoughtStore = create<ThoughtState>()(
@@ -38,7 +39,8 @@ export const useThoughtStore = create<ThoughtState>()(
         set((state) => ({
           entries: state.entries.filter(e => e.id !== id),
         }));
-      }
+      },
+      setEntries: (entries) => set({ entries })
     }),
     {
       name: 'mindspace-thought-storage',

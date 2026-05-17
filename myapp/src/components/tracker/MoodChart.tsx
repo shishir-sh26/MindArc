@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, Text, TouchableWithoutFeedback } from 'react-native';
 import Svg, { Path, Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
-import Animated, { useSharedValue, useAnimatedStyle, withTiming, withDelay, Easing, withSpring } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedProps, withTiming, withDelay, Easing, withSpring } from 'react-native-reanimated';
 import { useTheme } from '../../hooks/useTheme';
 import { spacing } from '../../../theme/spacing';
 import { typography } from '../../../theme/typography';
@@ -28,11 +28,11 @@ export const MoodChart = ({ data }: MoodChartProps) => {
     pointScale.value = withDelay(1200, withSpring(1, { damping: 12 }));
   }, []);
 
-  const animatedPathStyle = useAnimatedStyle(() => ({
+  const animatedPathProps = useAnimatedProps(() => ({
     strokeDashoffset: progress.value
   }));
-c
-  const animatedPointStyle = useAnimatedStyle(() => ({
+
+  const animatedPointProps = useAnimatedProps(() => ({
     r: pointScale.value * 4,
     strokeWidth: pointScale.value * 2
   }));
@@ -102,7 +102,7 @@ c
             strokeWidth="3" 
             fill="none" 
             strokeDasharray={pathLength}
-            animatedProps={animatedPathStyle}
+            animatedProps={animatedPathProps}
           />
         }
 
@@ -113,7 +113,7 @@ c
             cy={p.y} 
             fill={colors.background} 
             stroke={colors.accent} 
-            animatedProps={animatedPointStyle}
+            animatedProps={animatedPointProps}
             onPress={() => {
               HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Light);
               setTooltip(tooltip?.x === p.x ? null : p);

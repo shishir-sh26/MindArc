@@ -10,6 +10,7 @@ export type BottomTabParamList = {
 };
 
 export type RootStackParamList = {
+  Auth: undefined;
   Tabs: NavigatorScreenParams<BottomTabParamList>;
   ModuleDetail: { module: any };
   TrackerHistory: undefined;

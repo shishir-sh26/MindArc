@@ -250,8 +250,9 @@ const MythChecker = () => {
     setResult(null);
     HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Medium);
 
-    // Using the detected local IP for connectivity on physical devices
-    const apiUrl = 'http://192.168.31.68:8000/api/v1/myth-check';
+    // Using the detected local IP or EXPO_PUBLIC_API_URL
+    const baseUrl = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.37:8000';
+    const apiUrl = `${baseUrl}/api/v1/myth-check`;
 
     try {
       const response = await fetch(apiUrl, {
@@ -393,7 +394,8 @@ const LifestyleAssessment = () => {
     setLoading(true);
     HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Heavy);
     try {
-      const response = await fetch('http://192.168.31.68:8000/api/v1/lifestyle-plan', {
+      const baseUrl = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.37:8000';
+      const response = await fetch(`${baseUrl}/api/v1/lifestyle-plan`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ responses }),

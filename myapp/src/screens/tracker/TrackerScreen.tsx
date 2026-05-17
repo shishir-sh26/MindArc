@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import { supabase } from '../../utils/supabase';
+import { useTranslation } from 'react-i18next';
+import { ForestBackground } from '../../components/common/ForestBackground';
+import { db, auth } from '../../utils/firebase';
+import { collection, addDoc, doc, setDoc } from 'firebase/firestore';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { useTheme } from '../../hooks/useTheme';
 import { useMoodStore } from '../../store/moodStore';
@@ -34,6 +37,7 @@ const SYMPTOMS_LIST = [
 ];
 
 export default function TrackerScreen({ navigation }: Props) {
+  const { t } = useTranslation();
   const { colors } = useTheme();
   const addEntry = useMoodStore((state) => state.addEntry);
   const getEntryByDate = useMoodStore((state) => state.getEntryByDate);
@@ -69,13 +73,16 @@ const [thoughtDiary, setThoughtDiary] = useState<string>(existingEntry?.thoughtD
 
     try {
       // 3. Network Execution
-      const { error } = await supabase
-        .from('tracker_logs')
-        .insert([payload]);
-
-      if (error) {
-        console.error("Supabase Error:", error);
-        throw new Error(error.message);
+      const user = auth.currentUser;
+      if (user) {
+        // Tie logs to the authenticated user ID
+        await addDoc(collection(db, 'tracker_logs'), {
+          ...payload,
+          user_id: user.uid,
+          created_at: new Date().toISOString()
+        });
+      } else {
+        throw new Error("You must be logged in to save entries.");
       }
 
       // 4. Local State Backup & Navigation
@@ -96,16 +103,18 @@ const [thoughtDiary, setThoughtDiary] = useState<string>(existingEntry?.thoughtD
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
+    <View style={[styles.outerContainer, { backgroundColor: colors.background }]}>
+      <ForestBackground bgHeightRatio={0.38} showBottomPlants />
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]}>Daily Check-in</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{t('tracker.title')}</Text>
         <TouchableOpacity onPress={() => navigation.navigate('TrackerHistory')}>
-          <Text style={{ color: colors.accent }}>View History</Text>
+          <Text style={{ color: colors.accent }}>{t('tracker.history')}</Text>
         </TouchableOpacity>
       </View>
 
       <Card style={styles.card}>
-        <Text style={[styles.label, { color: colors.text }]}>How are you feeling?</Text>
+        <Text style={[styles.label, { color: colors.text }]}>{t('tracker.howAreYou')}</Text>
         <View style={styles.moodRow}>
           {MOODS.map(m => (
             <TouchableOpacity 
@@ -126,7 +135,7 @@ const [thoughtDiary, setThoughtDiary] = useState<string>(existingEntry?.thoughtD
       </Card>
 
       <Card style={styles.card}>
-        <Text style={[styles.label, { color: colors.text }]}>Symptoms</Text>
+        <Text style={[styles.label, { color: colors.text }]}>{t('tracker.symptoms')}</Text>
         <View style={styles.chipsRow}>
           {SYMPTOMS_LIST.map(sym => {
             const isSelected = symptoms.includes(sym);
@@ -150,9 +159,9 @@ const [thoughtDiary, setThoughtDiary] = useState<string>(existingEntry?.thoughtD
       </Card>
 
       <Card style={styles.card}>
-        <Text style={[styles.label, { color: colors.text }]}>Sleep</Text>
+        <Text style={[styles.label, { color: colors.text }]}>{t('tracker.sleep')}</Text>
         <View style={styles.sleepRow}>
-          <Text style={{ color: colors.text }}>{sleepHours.toFixed(1)} hours</Text>
+          <Text style={{ color: colors.text }}>{t('tracker.sleepHours', { hours: sleepHours.toFixed(1) })}</Text>
         </View>
         <Slider
           style={{ width: '100%', height: 40 }}
@@ -166,7 +175,7 @@ const [thoughtDiary, setThoughtDiary] = useState<string>(existingEntry?.thoughtD
           thumbTintColor={colors.accentBlue}
         />
         
-        <Text style={[styles.subLabel, { color: colors.textMuted, marginTop: spacing.md }]}>Quality</Text>
+        <Text style={[styles.subLabel, { color: colors.textMuted, marginTop: spacing.md }]}>{t('tracker.quality')}</Text>
         <View style={styles.qualityRow}>
           {['poor', 'okay', 'good'].map(q => (
             <TouchableOpacity
@@ -177,14 +186,14 @@ const [thoughtDiary, setThoughtDiary] = useState<string>(existingEntry?.thoughtD
                 { backgroundColor: sleepQuality === q ? colors.accentSoft : colors.surfaceAlt }
               ]}
             >
-              <Text style={{ color: colors.text, textTransform: 'capitalize' }}>{q}</Text>
+              <Text style={{ color: colors.text, textTransform: 'capitalize' }}>{t(`tracker.sleepQuality.${q}`)}</Text>
             </TouchableOpacity>
           ))}
         </View>
       </Card>
 <Card style={styles.card}>
-        <Text style={[styles.label, { color: colors.text }]}>Negative Thought Tracker</Text>
-        <Text style={[styles.subLabel, { color: colors.textMuted }]}>Log a specific thought for reflection.</Text>
+        <Text style={[styles.label, { color: colors.text }]}>{t('home.thoughtDiary')}</Text>
+        <Text style={[styles.subLabel, { color: colors.textMuted }]}>{t('home.logThoughts')}</Text>
         
         <TextInput
           style={[
@@ -197,7 +206,7 @@ const [thoughtDiary, setThoughtDiary] = useState<string>(existingEntry?.thoughtD
           ]}
           multiline={true}
           numberOfLines={4}
-          placeholder="What is weighing on your mind?"
+          placeholder={t('thoughtDiary.theSituationPlaceholder')}
           placeholderTextColor={colors.textMuted}
           value={thoughtDiary}
           onChangeText={setThoughtDiary}
@@ -205,12 +214,17 @@ const [thoughtDiary, setThoughtDiary] = useState<string>(existingEntry?.thoughtD
         />
       </Card>      
 
-      <Button title={existingEntry ? "Update Entry" : "Save Entry"} onPress={handleSave} style={{ marginTop: spacing.lg }} />
-    </ScrollView>
+      <Button title={existingEntry ? t('tracker.updateEntry') : t('tracker.saveEntry')} onPress={handleSave} style={{ marginTop: spacing.lg }} />
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  outerContainer: {
+    flex: 1,
+    position: 'relative',
+  },
   container: {
     flex: 1,
   },

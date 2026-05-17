@@ -1,19 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { ForestBackground } from '../../components/common/ForestBackground';
 import { Audio } from 'expo-av';
 import { useTheme } from '../../hooks/useTheme';
 import { spacing } from '../../../theme/spacing';
 import { Ionicons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
+import { useTranslation } from 'react-i18next';
 
-// Mocking with external URLs to ensure playability without local assets
+// Using local audio files added in myapp/assets/images
 const SOUND_OPTIONS = [
-  { id: 'rain', name: 'Heavy Rain', icon: 'rainy', url: 'https://cdn.pixabay.com/download/audio/2021/08/09/audio_6b5d92e62a.mp3' },
-  { id: 'forest', name: 'Forest Birds', icon: 'leaf', url: 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_209772ee54.mp3' },
-  { id: 'ocean', name: 'Ocean Waves', icon: 'water', url: 'https://cdn.pixabay.com/download/audio/2022/01/18/audio_8bd0cd16aa.mp3' },
+  { id: 'rain', name: 'Heavy Rain', icon: 'rainy', file: require('../../../assets/images/heavyrain.mp3') },
+  { id: 'forest', name: 'Forest Birds', icon: 'leaf', file: require('../../../assets/images/forestbirds.mp3') },
+  { id: 'ocean', name: 'Ocean Waves', icon: 'water', file: require('../../../assets/images/oceanwaves.mp3') },
 ];
 
 export default function NatureSoundsScreen() {
+  const { t } = useTranslation();
   const { colors } = useTheme();
   
   const [sound, setSound] = useState<Audio.Sound | null>(null);
@@ -21,7 +24,7 @@ export default function NatureSoundsScreen() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(0.5);
 
-  async function playSound(url: string, id: string) {
+  async function playSound(file: any, id: string) {
     if (sound) {
       await sound.unloadAsync();
       setSound(null);
@@ -29,7 +32,7 @@ export default function NatureSoundsScreen() {
 
     try {
       const { sound: newSound } = await Audio.Sound.createAsync(
-        { uri: url },
+        file,
         { shouldPlay: true, isLooping: true, volume }
       );
       setSound(newSound);
@@ -68,11 +71,13 @@ export default function NatureSoundsScreen() {
   }, [sound]);
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
+    <View style={[styles.outerContainer, { backgroundColor: colors.background }]}>
+      <ForestBackground bgHeightRatio={0.40} showBottomPlants />
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]}>Nature Sounds</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{t('sounds.title')}</Text>
         <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-          Put on your headphones and drift away.
+          {t('sounds.subtitle')}
         </Text>
       </View>
 
@@ -91,7 +96,7 @@ export default function NatureSoundsScreen() {
               ]}
               onPress={() => {
                 if (isActive) togglePlayPause();
-                else playSound(opt.url, opt.id);
+                else playSound(opt.file, opt.id);
               }}
             >
               <Ionicons 
@@ -100,7 +105,7 @@ export default function NatureSoundsScreen() {
                 color={isActive ? colors.accent : colors.textMuted} 
               />
               <Text style={[styles.soundTitle, { color: isActive ? colors.text : colors.textMuted }]}>
-                {opt.name}
+                {t(`sounds.options.${opt.id}`)}
               </Text>
               
               {isActive && (
@@ -117,7 +122,7 @@ export default function NatureSoundsScreen() {
       {activeSoundId && (
         <View style={[styles.playerContainer, { backgroundColor: colors.surfaceAlt }]}>
           <Text style={[styles.playerTitle, { color: colors.text }]}>
-            Now Playing: {SOUND_OPTIONS.find(s => s.id === activeSoundId)?.name}
+            {t('sounds.nowPlaying')} {t(`sounds.options.${activeSoundId}`)}
           </Text>
           
           <View style={styles.controlsRow}>
@@ -142,11 +147,13 @@ export default function NatureSoundsScreen() {
           </View>
         </View>
       )}
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  outerContainer: { flex: 1, position: 'relative' },
   container: { flex: 1 },
   content: { padding: spacing.lg, paddingBottom: spacing.xxxl },
   header: { marginBottom: spacing.xl, marginTop: spacing.md },

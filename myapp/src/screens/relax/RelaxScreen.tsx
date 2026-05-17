@@ -1,9 +1,11 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { ForestBackground } from '../../components/common/ForestBackground';
 import { useTheme } from '../../hooks/useTheme';
 import { Card } from '../../components/common/Card';
 import { spacing } from '../../../theme/spacing';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList, BottomTabParamList } from '../../navigation/types';
 import { CompositeNavigationProp } from '@react-navigation/native';
@@ -19,14 +21,17 @@ type Props = {
 };
 
 export default function RelaxScreen({ navigation }: Props) {
+  const { t } = useTranslation();
   const { colors } = useTheme();
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
+    <View style={[styles.outerContainer, { backgroundColor: colors.background }]}>
+      <ForestBackground bgHeightRatio={0.40} showBottomPlants />
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]}>Relax</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{t('relax.title')}</Text>
         <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-          Simple tools to help you find your calm.
+          {t('relax.subtitle')}
         </Text>
       </View>
 
@@ -38,9 +43,9 @@ export default function RelaxScreen({ navigation }: Props) {
           <Ionicons name="medical-outline" size={32} color={colors.accent} />
         </View>
         <View style={styles.textContainer}>
-          <Text style={[styles.cardTitle, { color: colors.text }]}>Box Breathing</Text>
+          <Text style={[styles.cardTitle, { color: colors.text }]}>{t('relax.boxBreathing')}</Text>
           <Text style={[styles.cardSub, { color: colors.textMuted }]}>
-            A 4-step breathing technique to reduce stress and regain focus.
+            {t('relax.boxBreathingSub')}
           </Text>
         </View>
         <Ionicons name="chevron-forward" size={24} color={colors.textMuted} />
@@ -54,18 +59,23 @@ export default function RelaxScreen({ navigation }: Props) {
           <Ionicons name="musical-notes-outline" size={32} color={colors.accentBlue} />
         </View>
         <View style={styles.textContainer}>
-          <Text style={[styles.cardTitle, { color: colors.text }]}>Nature Sounds</Text>
+          <Text style={[styles.cardTitle, { color: colors.text }]}>{t('relax.natureSounds')}</Text>
           <Text style={[styles.cardSub, { color: colors.textMuted }]}>
-            Immersive audio to quiet your mind.
+            {t('relax.natureSoundsSub')}
           </Text>
         </View>
         <Ionicons name="chevron-forward" size={24} color={colors.textMuted} />
       </Card>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  outerContainer: {
+    flex: 1,
+    position: 'relative',
+  },
   container: {
     flex: 1,
   },

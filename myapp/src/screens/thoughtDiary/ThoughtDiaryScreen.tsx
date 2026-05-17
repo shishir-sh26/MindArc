@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { ForestBackground } from '../../components/common/ForestBackground';
 import { useTheme } from '../../hooks/useTheme';
 import { useThoughtStore, ThoughtEntry } from '../../store/thoughtStore';
 import { Card } from '../../components/common/Card';
@@ -47,6 +48,7 @@ export default function ThoughtDiaryScreen({ navigation }: Props) {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <ForestBackground bgHeightRatio={0.36} showBottomPlants />
       <FlatList
         data={entries}
         keyExtractor={item => item.id}

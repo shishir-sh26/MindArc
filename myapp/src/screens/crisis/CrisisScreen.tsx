@@ -1,12 +1,15 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, Alert } from 'react-native';
+import { ForestBackground } from '../../components/common/ForestBackground';
 import { useTheme } from '../../hooks/useTheme';
 import { crisisContacts } from '../../data/crisisContacts';
 import { Card } from '../../components/common/Card';
 import { spacing, radii } from '../../../theme/spacing';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 export default function CrisisScreen() {
+  const { t } = useTranslation();
   const { colors } = useTheme();
 
   const handleCall = (number: string) => {
@@ -18,20 +21,22 @@ export default function CrisisScreen() {
       if (supported) {
         Linking.openURL(url);
       } else {
-        Alert.alert('Error', 'Calling is not supported on this device.');
+        Alert.alert(t('crisis.error'), t('crisis.noCallSupport'));
       }
     });
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
+    <View style={[styles.outerContainer, { backgroundColor: colors.background }]}>
+      <ForestBackground bgHeightRatio={0.38} showBottomPlants={false} />
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.header}>
         <View style={styles.iconCircle}>
           <Ionicons name="heart" size={48} color={colors.danger} />
         </View>
-        <Text style={[styles.title, { color: colors.text }]}>You are not alone.</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{t('crisis.notAlone')}</Text>
         <Text style={[styles.subtitle, { color: colors.textMuted }]}>
-          There are people who want to listen and help. Reach out to one of the free support lines below.
+          {t('crisis.reachOut')}
         </Text>
       </View>
 
@@ -49,7 +54,7 @@ export default function CrisisScreen() {
               onPress={() => handleCall(contact.number)}
             >
               <Ionicons name="call" size={20} color="#fff" />
-              <Text style={styles.callBtnText}>Call Now</Text>
+              <Text style={styles.callBtnText}>{t('crisis.call')}</Text>
             </TouchableOpacity>
           </View>
         </Card>
@@ -57,14 +62,19 @@ export default function CrisisScreen() {
       
       <View style={styles.footer}>
         <Text style={{ color: colors.textMuted, textAlign: 'center', fontSize: 13, lineHeight: 20 }}>
-          If you are in immediate physical danger, please contact local emergency services immediately.
+          {t('crisis.warning')}
         </Text>
       </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  outerContainer: {
+    flex: 1,
+    position: 'relative',
+  },
   container: {
     flex: 1,
   },

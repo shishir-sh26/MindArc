@@ -5,6 +5,8 @@ import { Platform } from 'react-native';
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
     shouldPlaySound: true,
     shouldSetBadge: false,
   }),
@@ -58,8 +60,7 @@ export const NotificationController = {
           hour,
           minute,
           repeats: true,
-          type: Notifications.SchedulableTriggerInputTypes.DAILY,
-        },
+        } as any,
       });
       console.log(`Scheduled daily reminder for ${hour}:${minute < 10 ? '0'+minute : minute}`);
     } catch (error) {

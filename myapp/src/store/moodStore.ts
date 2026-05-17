@@ -18,6 +18,7 @@ interface MoodState {
   streak: number;
   addEntry: (entry: Omit<MoodEntry, 'id' | 'timestamp'>) => void;
   getEntryByDate: (date: string) => MoodEntry | undefined;
+  setEntries: (entries: MoodEntry[]) => void;
 }
 
 export const useMoodStore = create<MoodState>()(
@@ -46,7 +47,8 @@ export const useMoodStore = create<MoodState>()(
         // Return the MOST RECENT entry for that date to pre-fill the form,
         // but don't delete the others.
         return get().entries.find(e => e.date === date);
-      }
+      },
+      setEntries: (entries) => set({ entries })
     }),
     {
       name: 'mindspace-mood-storage',

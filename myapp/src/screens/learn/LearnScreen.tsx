@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList } from 'react-native';
+import { ForestBackground } from '../../components/common/ForestBackground';
 import { useTheme } from '../../hooks/useTheme';
 import { educationalModules } from '../../data/educationalModules';
 import { Card } from '../../components/common/Card';
@@ -7,6 +8,7 @@ import { spacing } from '../../../theme/spacing';
 import { typography } from '../../../theme/typography';
 import { rf } from '../../utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 
@@ -15,13 +17,15 @@ type Props = {
 };
 
 export default function LearnScreen({ navigation }: Props) {
+  const { t } = useTranslation();
   const { colors, isDark } = useTheme();
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <ForestBackground bgHeightRatio={0.38} showBottomPlants />
       <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]}>Library</Text>
-        <Text style={[styles.subtitle, { color: colors.textMuted }]}>Educational modules to help you understand your mind.</Text>
+        <Text style={[styles.title, { color: colors.text }]}>{t('learn.title')}</Text>
+        <Text style={[styles.subtitle, { color: colors.textMuted }]}>{t('learn.subtitle')}</Text>
       </View>
       
       <FlatList

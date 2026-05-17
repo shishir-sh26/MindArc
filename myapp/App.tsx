@@ -1,4 +1,5 @@
 import React from 'react';
+import './src/i18n';
 import { RootNavigator } from './src/navigation/RootNavigator';
 import { ThemeProvider } from './theme/ThemeContext';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -27,8 +28,8 @@ export default function App() {
 
   if (!fontsLoaded) {
     return (
-      <View style={{ flex: 1, backgroundColor: '#FDF6F0', alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator color="#A8957A" size="large" />
+      <View style={{ flex: 1, backgroundColor: '#F0F7E8', alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator color="#5A9C3A" size="large" />
       </View>
     );
   }

@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList } from 'react-native';
+import { ForestBackground } from '../../components/common/ForestBackground';
 import { useTheme } from '../../hooks/useTheme';
 import { useMoodStore, MoodEntry } from '../../store/moodStore';
 import { Card } from '../../components/common/Card';
@@ -61,6 +62,7 @@ export default function TrackerHistoryScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <ForestBackground bgHeightRatio={0.35} showBottomPlants />
       <FlatList
         data={entries}
         keyExtractor={item => item.id}

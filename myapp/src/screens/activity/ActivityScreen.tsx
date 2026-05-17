@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Image } from 'react-native';
+import { ForestBackground } from '../../components/common/ForestBackground';
 import { Pedometer } from 'expo-sensors';
 import * as Notifications from 'expo-notifications';
 import Svg, { Circle } from 'react-native-svg';
@@ -10,6 +11,7 @@ import { yogaContent } from '../../data/yogaContent';
 import { spacing } from '../../../theme/spacing';
 import { Ionicons } from '@expo/vector-icons';
 import YoutubeIframe from 'react-native-youtube-iframe';
+import { useTranslation } from 'react-i18next';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList, BottomTabParamList } from '../../navigation/types';
 import { CompositeNavigationProp } from '@react-navigation/native';
@@ -36,6 +38,7 @@ Notifications.setNotificationHandler({
 });
 
 export default function ActivityScreen({ navigation }: Props) {
+  const { t } = useTranslation();
   const { colors } = useTheme();
   const { stepsGoal, reminderTime, setReminderTime } = useActivityStore();
 
@@ -118,12 +121,14 @@ export default function ActivityScreen({ navigation }: Props) {
   const strokeDashoffset = circumference - (progress * circumference);
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
-      <Text style={[styles.title, { color: colors.text, marginBottom: spacing.xl }]}>Activity</Text>
+    <View style={[styles.outerContainer, { backgroundColor: colors.background }]}>
+      <ForestBackground bgHeightRatio={0.38} showBottomPlants />
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <Text style={[styles.title, { color: colors.text, marginBottom: spacing.xl }]}>{t('activity.title')}</Text>
 
       {/* Pedometer Section */}
       <Card style={styles.stepsCard}>
-        <Text style={[styles.cardHeading, { color: colors.text }]}>Daily Steps</Text>
+        <Text style={[styles.cardHeading, { color: colors.text }]}>{t('activity.pedometer')}</Text>
         <View style={styles.statsRow}>
           <View style={styles.progressContainer}>
             <Svg width={140} height={140}>
@@ -155,10 +160,10 @@ export default function ActivityScreen({ navigation }: Props) {
           </View>
           <View style={styles.stepsInfo}>
             <Text style={[styles.stepCount, { color: colors.text }]}>{currentStepCount}</Text>
-            <Text style={[styles.stepGoal, { color: colors.textMuted }]}>/ {stepsGoal} goal</Text>
+            <Text style={[styles.stepGoal, { color: colors.textMuted }]}>/ {stepsGoal} {t('activity.goal')}</Text>
             {isPedometerAvailable !== 'true' && (
               <Text style={{ color: colors.danger, fontSize: 10, marginTop: 4 }}>
-                Sensor: {isPedometerAvailable}
+                {t('activity.sensor')} {isPedometerAvailable}
               </Text>
             )}
           </View>
@@ -168,9 +173,9 @@ export default function ActivityScreen({ navigation }: Props) {
       {/* Reminder Section */}
       <Card style={styles.reminderCard}>
         <View style={styles.reminderText}>
-          <Text style={[styles.cardHeading, { color: colors.text }]}>Daily Reminder</Text>
+          <Text style={[styles.cardHeading, { color: colors.text }]}>{t('activity.dailyReminder')}</Text>
           <Text style={[styles.reminderSub, { color: colors.textMuted }]}>
-            Get a daily nudge to stay active (6:00 PM)
+            {t('activity.remindToLog')}
           </Text>
         </View>
         <Switch
@@ -182,7 +187,7 @@ export default function ActivityScreen({ navigation }: Props) {
       </Card>
 
       {/* Yoga Section */}
-      <Text style={[styles.sectionTitle, { color: colors.text }]}>Yoga, Stretching & Exercises</Text>
+      <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('activity.yoga')}</Text>
       {yogaContent.map(yoga => (
         <View 
           key={yoga.id} 
@@ -196,7 +201,7 @@ export default function ActivityScreen({ navigation }: Props) {
                 play={true}
               />
               <TouchableOpacity onPress={() => setActiveVideoId(null)} style={{ padding: spacing.sm, alignItems: 'center', borderTopWidth: 1, borderTopColor: colors.border }}>
-                <Text style={{ color: colors.accent, fontWeight: '600' }}>Close Video</Text>
+                <Text style={{ color: colors.accent, fontWeight: '600' }}>{t('activity.closeVideo')}</Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -222,11 +227,13 @@ export default function ActivityScreen({ navigation }: Props) {
         </View>
       ))}
 
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  outerContainer: { flex: 1, position: 'relative' },
   container: { flex: 1 },
   content: { padding: spacing.lg, paddingTop: spacing.xxl },
   title: { fontSize: 28, fontWeight: 'bold' },

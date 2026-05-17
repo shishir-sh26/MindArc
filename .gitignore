@@ -1,44 +1,117 @@
-# Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
+# ====================================================================
+# UNIFIED GITIGNORE FOR MINDARC MENTAL HEALTH SUITE (FRONTEND & BACKEND)
+# ====================================================================
 
-# dependencies
+# --------------------------------------------------------------------
+# 1. CRITICAL: SENSITIVE CREDENTIALS & API KEYS (NEVER COMMIT THESE)
+# --------------------------------------------------------------------
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+backend/.env
+myapp/.env
+
+# Google Services Credentials (highly sensitive)
+google-services*.json
+google-services (1).json
+google-services.json
+google-services-*.json
+service-account*.json
+*.pem
+*.key
+*.pub
+
+# --------------------------------------------------------------------
+# 2. FRONTEND: REACT NATIVE & EXPO (myapp/)
+# --------------------------------------------------------------------
+# Dependencies
+myapp/node_modules/
 node_modules/
 
-# Expo
+# Expo directories and build artifacts
+myapp/.expo/
 .expo/
+myapp/dist/
 dist/
+myapp/web-build/
 web-build/
+myapp/expo-env.d.ts
 expo-env.d.ts
 
-# Native
-.kotlin/
-*.orig.*
+# Native folders (iOS & Android platforms)
+myapp/ios/
+myapp/android/
+ios/
+android/
+
+# Mobile Signing Keys and Keystores
 *.jks
 *.p8
 *.p12
-*.key
+*.keystore
 *.mobileprovision
+*.orig.*
 
-# Metro
+# Metro health check logs
 .metro-health-check*
+myapp/.metro-health-check*
 
-# debug
+# Debug & npm logs
 npm-debug.*
 yarn-debug.*
 yarn-error.*
+package-log.json
 
-# macOS
-.DS_Store
-*.pem
-
-# local env files
-.env
-.env*.local
-
-# typescript
+# TypeScript build info
 *.tsbuildinfo
 
-app-example
+# --------------------------------------------------------------------
+# 3. BACKEND: PYTHON & FASTAPI (backend/)
+# --------------------------------------------------------------------
+# Virtual Environments
+backend/.venv/
+.venv/
+backend/venv/
+venv/
+backend/env/
+env/
+ENV/
 
-# generated native folders
-/ios
-/android
+# Python bytecode and caches
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# LangChain / LLM session logs or telemetry (optional)
+.langchain/
+langchain.log
+
+# --------------------------------------------------------------------
+# 4. SYSTEM & IDE SPECIFIC
+# --------------------------------------------------------------------
+# macOS System Files
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+
+# Windows System Files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# IDE configs
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
