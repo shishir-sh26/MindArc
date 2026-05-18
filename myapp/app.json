@@ -20,7 +20,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.shishir26io.MindArc",
+      "package": "com.company.Mindarc",
       "googleServicesFile": "./google-services.json"
     },
     "web": {
