@@ -15,7 +15,8 @@ const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 const MORNING_BG = require('../../../assets/images/forest_morning_bg.png');
 const LEAVES_LIGHT = require('../../../assets/images/forest_hanging_leaves_light.png');
 const LEAVES_DARK = require('../../../assets/images/forest_hanging_leaves_dark.png');
-const BOTTOM_PLANTS = require('../../../assets/images/forest_bottom_plants.png');
+const BOTTOM_PLANTS_LIGHT = require('../../../assets/images/forest_bottom_plants.png');
+const BOTTOM_PLANTS_DARK = require('../../../assets/images/forest_bottom_plants_dark.png');
 
 interface Props {
   bgHeightRatio?: number;
@@ -78,25 +79,25 @@ export const ForestBackground = ({ bgHeightRatio = 0.42, showBottomPlants = true
         ──────────────────────────────────────────────────────── */}
       {isDark && (
         <>
-          {/* Deep midnight-green tint — makes the forest look like night */}
+          {/* Deep black tint — makes the forest fade into black */}
           <View
             style={[
               styles.bgImage,
               {
                 height: bgH,
-                backgroundColor: '#041A08',
-                opacity: 0.72,
+                backgroundColor: '#000000',
+                opacity: 0.85,
               },
             ]}
           />
-          {/* Cool teal/blue vignette layer — moonlight feel */}
+          {/* Cool dark teal/blue vignette layer — moonlight feel */}
           <View
             style={[
               styles.bgImage,
               {
                 height: bgH,
-                backgroundColor: '#0A2030',
-                opacity: 0.30,
+                backgroundColor: '#05101A',
+                opacity: 0.20,
               },
             ]}
           />
@@ -122,7 +123,7 @@ export const ForestBackground = ({ bgHeightRatio = 0.42, showBottomPlants = true
           {
             height: bgH * 0.55,
             top: bgH * 0.45,
-            backgroundColor: isDark ? '#0A1409' : '#F0F7E8',
+            backgroundColor: isDark ? '#000000' : '#F0F7E8',
           },
         ]}
       />
@@ -144,8 +145,8 @@ export const ForestBackground = ({ bgHeightRatio = 0.42, showBottomPlants = true
       {/* ── Bottom plants ── */}
       {showBottomPlants && (
         <Animated.Image
-          source={BOTTOM_PLANTS}
-          style={[styles.bottomPlants, plantStyle, { opacity: isDark ? 0.45 : 0.7 }]}
+          source={isDark ? BOTTOM_PLANTS_DARK : BOTTOM_PLANTS_LIGHT}
+          style={[styles.bottomPlants, plantStyle, { opacity: isDark ? 0.90 : 0.7 }]}
           resizeMode="cover"
         />
       )}

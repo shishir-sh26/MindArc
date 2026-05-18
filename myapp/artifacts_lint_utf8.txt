@@ -1,0 +1,96 @@
+﻿
+> mindarc@1.0.0 lint
+> expo lint
+
+env: load .env
+env: export GOOGLE_API_KEY GOOGLE_API_KEY_2 EXPO_PUBLIC_SUPABASE_URL EXPO_PUBLIC_SUPABASE_ANON_KEY EXPO_PUBLIC_API_URL
+
+C:\projects\side-projects\new-mental-app\MentalHealthApp\myapp\src\components\common\Button.tsx
+  2:10  warning  'View' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\projects\side-projects\new-mental-app\MentalHealthApp\myapp\src\components\common\Card.tsx
+  2:16  warning  'Text' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\projects\side-projects\new-mental-app\MentalHealthApp\myapp\src\components\common\ForestBackground.tsx
+  44:6  warning  React Hook useEffect has missing dependencies: 'swayX' and 'swayY'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  58:6  warning  React Hook useEffect has a missing dependency: 'plantDrift'. Either include it or remove the dependency array           react-hooks/exhaustive-deps
+
+C:\projects\side-projects\new-mental-app\MentalHealthApp\myapp\src\components\common\SettingsModal.tsx
+  100:5  warning  Caution: `i18next` also has a named export `changeLanguage`. Check if you meant to write `import {changeLanguage} from 'i18next'` instead  import/no-named-as-default-member
+
+C:\projects\side-projects\new-mental-app\MentalHealthApp\myapp\src\components\diary\DiaryScreen.tsx
+   14:10  warning  'Ionicons' is defined but never used                             @typescript-eslint/no-unused-vars
+  152:9   error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  152:32  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  174:45  error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`  react/no-unescaped-entities
+
+C:\projects\side-projects\new-mental-app\MentalHealthApp\myapp\src\components\tracker\MoodChart.tsx
+  29:6  warning  React Hook useEffect has missing dependencies: 'pointScale' and 'progress'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\projects\side-projects\new-mental-app\MentalHealthApp\myapp\src\i18n\index.ts
+  20:14  warning  'error' is defined but never used                                                                                 @typescript-eslint/no-unused-vars
+  28:14  warning  'error' is defined but never used                                                                                 @typescript-eslint/no-unused-vars
+  32:1   warning  Caution: `i18n` also has a named export `use`. Check if you meant to write `import {use} from 'i18next'` instead  import/no-named-as-default-member
+
+C:\projects\side-projects\new-mental-app\MentalHealthApp\myapp\src\navigation\BottomTabNavigator.tsx
+  27:6  warning  React Hook useEffect has a missing dependency: 'scale'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\projects\side-projects\new-mental-app\MentalHealthApp\myapp\src\screens\auth\AuthScreen.tsx
+  2:102  warning  'ActivityIndicator' is defined but never used  @typescript-eslint/no-unused-vars
+  8:10   warning  'wp' is defined but never used                 @typescript-eslint/no-unused-vars
+  8:14   warning  'hp' is defined but never used                 @typescript-eslint/no-unused-vars
+
+C:\projects\side-projects\new-mental-app\MentalHealthApp\myapp\src\screens\home\HomeScreen.tsx
+   13:32  warning  'useNavigation' is defined but never used                                                                                                  @typescript-eslint/no-unused-vars
+   16:29  warning  'Defs' is defined but never used                                                                                                           @typescript-eslint/no-unused-vars
+   16:35  warning  'LinearGradient' is defined but never used                                                                                                 @typescript-eslint/no-unused-vars
+   16:51  warning  'Stop' is defined but never used                                                                                                           @typescript-eslint/no-unused-vars
+   29:7   warning  'AnimatedTouchable' is assigned a value but never used                                                                                     @typescript-eslint/no-unused-vars
+   63:9   warning  'cardScale' is assigned a value but never used                                                                                             @typescript-eslint/no-unused-vars
+   68:6   warning  React Hook useEffect has missing dependencies: 'headerOpacity' and 'headerTranslateY'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  317:6   warning  React Hook useEffect has missing dependencies: 'delay', 'opacity', and 'translateY'. Either include them or remove the dependency array    react-hooks/exhaustive-deps
+
+C:\projects\side-projects\new-mental-app\MentalHealthApp\myapp\src\screens\learn\ModuleDetailScreen.tsx
+    9:164  warning  'runOnJS' is defined but never used                                                                                                                @typescript-eslint/no-unused-vars
+   10:15   warning  'Rect' is defined but never used                                                                                                                   @typescript-eslint/no-unused-vars
+   10:29   warning  'Path' is defined but never used                                                                                                                   @typescript-eslint/no-unused-vars
+   15:7    warning  'AnimatedView' is assigned a value but never used                                                                                                  @typescript-eslint/no-unused-vars
+  197:8    warning  React Hook useEffect has missing dependencies: 'index', 'pulse', 'radius', and 'targetRadius'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+  265:14   warning  'error' is defined but never used                                                                                                                  @typescript-eslint/no-unused-vars
+  276:45   error    `'` can be escaped with `&apos;`, `&lsquo;`, `&#39;`, `&rsquo;`                                                                                    react/no-unescaped-entities
+  388:10   warning  'step' is assigned a value but never used                                                                                                          @typescript-eslint/no-unused-vars
+  388:16   warning  'setStep' is assigned a value but never used                                                                                                       @typescript-eslint/no-unused-vars
+  405:14   warning  'error' is defined but never used                                                                                                                  @typescript-eslint/no-unused-vars
+  564:6    warning  React Hook useEffect has missing dependencies: 'opacity', 'rotation', and 'scale'. Either include them or remove the dependency array              react-hooks/exhaustive-deps
+  662:9    warning  'navigation' is assigned a value but never used                                                                                                    @typescript-eslint/no-unused-vars
+
+C:\projects\side-projects\new-mental-app\MentalHealthApp\myapp\src\screens\relax\BreathingScreen.tsx
+    9:3   warning  'withDelay' is defined but never used                                                                                                                          @typescript-eslint/no-unused-vars
+   16:10  warning  'spacing' is defined but never used                                                                                                                            @typescript-eslint/no-unused-vars
+   59:9   warning  'ringStyle1' is assigned a value but never used                                                                                                                @typescript-eslint/no-unused-vars
+  106:6   warning  React Hook useEffect has missing dependencies: 'breaths', 'runBreathingCycle', 'scale', and 'updatePhase'. Either include them or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\projects\side-projects\new-mental-app\MentalHealthApp\myapp\src\screens\thoughtDiary\NewThoughtEntryScreen.tsx
+   2:95  warning  'C:\projects\side-projects\new-mental-app\MentalHealthApp\myapp\node_modules\react-native\index.js' imported multiple times  import/no-duplicates
+   7:23  warning  'C:\projects\side-projects\new-mental-app\MentalHealthApp\myapp\node_modules\react-native\index.js' imported multiple times  import/no-duplicates
+  20:19  warning  'isDark' is assigned a value but never used                                                                                  @typescript-eslint/no-unused-vars
+
+C:\projects\side-projects\new-mental-app\MentalHealthApp\myapp\src\screens\tracker\TrackerHistoryScreen.tsx
+  56:71  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  56:91  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\projects\side-projects\new-mental-app\MentalHealthApp\myapp\src\screens\tracker\TrackerScreen.tsx
+  5:30  warning  'doc' is defined but never used     @typescript-eslint/no-unused-vars
+  5:35  warning  'setDoc' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\projects\side-projects\new-mental-app\MentalHealthApp\myapp\src\utils\firebase.ts
+  2:10  warning  'getAuth' is defined but never used                                                                                                        @typescript-eslint/no-unused-vars
+  2:41  warning  'C:\projects\side-projects\new-mental-app\MentalHealthApp\myapp\node_modules\firebase\auth\dist\esm\index.esm.js' imported multiple times  import/no-duplicates
+  4:43  warning  'C:\projects\side-projects\new-mental-app\MentalHealthApp\myapp\node_modules\firebase\auth\dist\esm\index.esm.js' imported multiple times  import/no-duplicates
+
+C:\projects\side-projects\new-mental-app\MentalHealthApp\myapp\src\utils\syncService.ts
+  1:52  warning  'orderBy' is defined but never used  @typescript-eslint/no-unused-vars
+
+Γ£û 52 problems (6 errors, 46 warnings)
+  0 errors and 1 warning potentially fixable with the `--fix` option.
+

@@ -53,7 +53,7 @@ export default function TrackerHistoryScreen() {
         {/* BRUTAL FIX: Actually render the thought diary if the user wrote one */}
         {item.thoughtDiary ? (
           <View style={{ backgroundColor: colors.surfaceAlt, padding: spacing.sm, borderRadius: 8 }}>
-            <Text style={{ color: colors.text, fontStyle: 'italic' }}>"{item.thoughtDiary}"</Text>
+            <Text style={{ color: colors.text, fontStyle: 'italic' }}>&quot;{item.thoughtDiary}&quot;</Text>
           </View>
         ) : null}
       </Card>

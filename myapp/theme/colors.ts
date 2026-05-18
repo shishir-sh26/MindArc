@@ -1,6 +1,6 @@
 // 🌿 Forest Night Theme — moonlit deep greens, teals, midnight blues
 export const darkColors = {
-  background: '#0A1409',        // deep forest floor at night
+  background: '#000000',        // solid black forest floor at night
   surface: '#111E0F',           // dark mossy bark
   surfaceAlt: '#0D1B0B',        // darker understory
   surfaceMuted: '#1C2E1A',      // shadow of leaves

@@ -273,7 +273,7 @@ const MythChecker = () => {
     <View style={simStyles.container}>
       <Text style={[simStyles.title, { color: colors.text, marginBottom: hp(1) }]}>AI Myth Buster</Text>
       <Text style={[simStyles.desc, { color: colors.textMuted, marginBottom: hp(2) }]}>
-        Enter a common myth or a thought you're unsure about, and our AI will clarify the medical fact.
+        {"Enter a common myth or a thought you're unsure about, and our AI will clarify the medical fact."}
       </Text>
 
       <TextInput
