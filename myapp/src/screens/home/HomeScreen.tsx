@@ -267,7 +267,7 @@ export default function HomeScreen({ navigation }: Props) {
           />
           <GridCard 
             title={t('home.crisisSupport')} subtitle={t('home.getHelpNow')} 
-            colorLight={colors.danger + '22'} colorDark={colors.danger} delay={270} 
+            colorLight={colors.crisisLight} colorDark={colors.crisis} delay={270} 
             onPress={() => { HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Light); navigation.navigate('Crisis'); }}
             icon={<Svg width="40" height="40" viewBox="0 0 24 24" fill="none"><Path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z" stroke={isDark ? '#F87171' : colors.danger} strokeWidth="2"/><Path d="M12 8v4" stroke={isDark ? '#F87171' : colors.danger} strokeWidth="2" strokeLinecap="round"/><Circle cx="12" cy="16" r="1.5" fill={isDark ? '#F87171' : colors.danger}/></Svg>}
           />

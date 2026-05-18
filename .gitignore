@@ -14,15 +14,15 @@
 backend/.env
 myapp/.env
 
-# Google Services Credentials (highly sensitive)
-google-services*.json
-google-services (1).json
-google-services.json
-google-services-*.json
-service-account*.json
-*.pem
-*.key
-*.pub
+# Google Services Credentials (tracked for EAS Build)
+# google-services*.json
+# google-services (1).json
+# google-services.json
+# google-services-*.json
+# service-account*.json
+# *.pem
+# *.key
+# *.pub
 
 # --------------------------------------------------------------------
 # 2. FRONTEND: REACT NATIVE & EXPO (myapp/)

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
+import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import { auth } from '../../utils/firebase';
 import { useTheme } from '../../hooks/useTheme';
 import { spacing, radii } from '../../../theme/spacing';
@@ -10,6 +11,13 @@ import { ForestBackground } from '../../components/common/ForestBackground';
 import { Button } from '../../components/common/Button';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+
+// Configure Google Sign-In with Web Client ID
+// (User can configure EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID in their .env)
+GoogleSignin.configure({
+  webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '178725930459-07c99792f5e8ac059793fe.apps.googleusercontent.com',
+  offlineAccess: true,
+});
 
 export default function AuthScreen() {
   const { t } = useTranslation();
@@ -45,6 +53,37 @@ export default function AuthScreen() {
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    setLoading(true);
+    try {
+      await GoogleSignin.hasPlayServices();
+      const response = await GoogleSignin.signIn();
+      
+      const idToken = response.data?.idToken;
+      if (!idToken) {
+        throw new Error("Google Sign-In did not return an ID Token. Make sure your SHA-1 fingerprint is registered in the Firebase console and you are using the correct Web Client ID.");
+      }
+
+      const credential = GoogleAuthProvider.credential(idToken);
+      await signInWithCredential(auth, credential);
+    } catch (error: any) {
+      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+        console.log("Google Sign-In cancelled by user");
+      } else if (error.code === statusCodes.IN_PROGRESS) {
+        Alert.alert("Google Sign-In", "Sign-in is already in progress.");
+      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        Alert.alert("Google Sign-In", "Google Play Services are not available or outdated.");
+      } else {
+        Alert.alert(
+          "Google Sign-In Setup Guide",
+          "Google Sign-In is now fully configured in the code!\n\nTo make it work in your custom APK, remember to:\n1. Download 'google-services.json' from your Firebase Console.\n2. Place it in your project's 'myapp' folder.\n3. Add your Keystore's SHA-1 fingerprint to the Firebase Android App settings.\n\nError details: " + error.message
+        );
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <KeyboardAvoidingView 
       style={{ flex: 1, backgroundColor: colors.background }}
@@ -58,7 +97,7 @@ export default function AuthScreen() {
           <Text style={[styles.subtitle, { color: colors.textMuted }]}>
             {isLogin ? t('auth.welcomeBack') : t('auth.createAccount')}
           </Text>
-
+ 
           <View style={styles.inputContainer}>
             <Text style={[styles.label, { color: colors.text }]}>{t('auth.email')}</Text>
             <TextInput
@@ -71,7 +110,7 @@ export default function AuthScreen() {
               keyboardType="email-address"
             />
           </View>
-
+ 
           <View style={styles.inputContainer}>
             <Text style={[styles.label, { color: colors.text }]}>{t('auth.password')}</Text>
             <TextInput
@@ -83,25 +122,30 @@ export default function AuthScreen() {
               secureTextEntry
             />
           </View>
-
+ 
           <Button 
             title={isLogin ? t('auth.logIn') : t('auth.signUp')} 
             onPress={handleAuth} 
             disabled={loading}
             style={{ marginTop: spacing.md }}
           />
-
+ 
           <View style={styles.dividerContainer}>
             <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
             <Text style={[styles.dividerText, { color: colors.textMuted }]}>{t('auth.or')}</Text>
             <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
           </View>
-
+ 
           <TouchableOpacity 
             style={[styles.googleButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#ffffff', borderColor: colors.border }]}
-            onPress={() => Alert.alert("Google Sign-In", "Google Sign-In requires a custom native build (npx expo prebuild) to function.")}
+            onPress={handleGoogleSignIn}
+            disabled={loading}
           >
-            <Ionicons name="logo-google" size={20} color={isDark ? '#fff' : '#444'} style={{ marginRight: 10 }} />
+            {loading ? (
+              <ActivityIndicator color={isDark ? '#fff' : '#444'} style={{ marginRight: 10 }} />
+            ) : (
+              <Ionicons name="logo-google" size={20} color={isDark ? '#fff' : '#444'} style={{ marginRight: 10 }} />
+            )}
             <Text style={[styles.googleButtonText, { color: isDark ? '#fff' : '#444' }]}>
               {t('auth.continueWithGoogle')}
             </Text>
