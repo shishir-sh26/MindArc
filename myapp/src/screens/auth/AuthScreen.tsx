@@ -15,7 +15,7 @@ import { useTranslation } from 'react-i18next';
 // Configure Google Sign-In with Web Client ID
 // (User can configure EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID in their .env)
 GoogleSignin.configure({
-  webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '178725930459-07c99792f5e8ac059793fe.apps.googleusercontent.com',
+  webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '178725930459-v2vcuioi5k8orq191urpnn3g0drj55ir.apps.googleusercontent.com',
   offlineAccess: true,
 });
 
