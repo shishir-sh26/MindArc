@@ -1,63 +1,44 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
-import { Pedometer } from 'expo-sensors';
+import { View, Text, StyleSheet, TouchableOpacity, Switch } from 'react-native';
 import Svg, { Circle, G } from 'react-native-svg';
+import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../../hooks/useTheme';
+import { useActivityStore } from '../../store/activityStore';
+import { Card } from '../common/Card';
+import { spacing } from '../../../theme/spacing';
 
-const THEME = {
-  background: '#0F172A',
-  card: '#1E293B',
-  text: '#E2E8F0',
-  accent: '#8FBC8F', // Sage Green
-  radius: 20,
-};
+export const PedometerWidget = () => {
+  const { colors } = useTheme();
+  const { 
+    stepsCount, 
+    stepsGoal, 
+    isPedometerAvailable,
+    addSteps, 
+    checkMidnightReset 
+  } = useActivityStore();
 
-export const PedometerWidget = ({ dailyGoal = 5000 }) => {
-  const [isPedometerAvailable, setIsPedometerAvailable] = useState<string>('checking');
-  const [pastStepCount, setPastStepCount] = useState(0);
-  const [currentStepCount, setCurrentStepCount] = useState(0);
+  const [isSandboxExpanded, setIsSandboxExpanded] = useState(false);
+  const [isAutoWalking, setIsAutoWalking] = useState(false);
 
-  const subscribe = async () => {
-    try {
-      const isAvailable = await Pedometer.isAvailableAsync();
-      setIsPedometerAvailable(String(isAvailable));
-
-      if (isAvailable) {
-        // Fetch steps from midnight to now
-        const end = new Date();
-        const start = new Date();
-        start.setHours(0, 0, 0, 0);
-
-        const pastSteps = await Pedometer.getStepCountAsync(start, end);
-        if (pastSteps) {
-          setPastStepCount(pastSteps.steps);
-        }
-
-        // Subscribe to live updates
-        return Pedometer.watchStepCount(result => {
-          setCurrentStepCount(result.steps);
-        });
-      }
-    } catch (error) {
-      setIsPedometerAvailable('error');
-      console.error('Pedometer Error:', error);
-    }
-  };
-
+  // Perform a midnight check on mount
   useEffect(() => {
-    let subscription: Pedometer.Subscription | undefined;
-    subscribe().then(sub => {
-      subscription = sub;
-    });
-
-    return () => {
-      if (subscription && subscription.remove) {
-        subscription.remove();
-      }
-    };
+    checkMidnightReset();
   }, []);
 
-  const totalSteps = pastStepCount + currentStepCount;
-  const progress = Math.min(totalSteps / dailyGoal, 1);
+  // Auto-walk Simulation Interval
+  useEffect(() => {
+    let timer: any;
+    if (isAutoWalking) {
+      timer = setInterval(() => {
+        addSteps(12); // Simulate walking: 12 steps every 500ms
+      }, 500);
+    }
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [isAutoWalking]);
+
+  const progress = Math.min(stepsCount / stepsGoal, 1);
   
   // Circular progress math
   const size = 160;
@@ -67,21 +48,31 @@ export const PedometerWidget = ({ dailyGoal = 5000 }) => {
   const strokeDashoffset = circumference - progress * circumference;
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Daily Activity</Text>
-      
-      {isPedometerAvailable === 'error' || isPedometerAvailable === 'false' ? (
-        <View style={styles.fallbackContainer}>
-          <Text style={styles.fallbackText}>
-            Motion tracking is unavailable or disabled. Allow physical activity access to track steps.
-          </Text>
+    <Card style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}>
+      <View style={styles.headerRow}>
+        <View style={styles.headerLeft}>
+          <Ionicons name="footsteps" size={20} color={colors.accent} style={styles.headerIcon} />
+          <Text style={[styles.title, { color: colors.text }]}>Daily Activity</Text>
         </View>
-      ) : (
+        
+        {/* Sandbox Walk toggle badge */}
+        <TouchableOpacity 
+          onPress={() => setIsSandboxExpanded(!isSandboxExpanded)}
+          style={[styles.sandboxToggle, { backgroundColor: colors.surfaceAlt, borderColor: colors.border }]}
+        >
+          <Ionicons name="construct" size={12} color={colors.accent} />
+          <Text style={[styles.sandboxToggleText, { color: colors.textMuted }]}>
+            {isSandboxExpanded ? "Hide Sim" : "Walk Sim"}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.mainContent}>
         <View style={styles.progressContainer}>
           <Svg width={size} height={size}>
             <G rotation="-90" origin={`${size / 2}, ${size / 2}`}>
               <Circle
-                stroke="#334155" // Muted Slate Track
+                stroke={colors.border}
                 fill="none"
                 cx={size / 2}
                 cy={size / 2}
@@ -89,7 +80,7 @@ export const PedometerWidget = ({ dailyGoal = 5000 }) => {
                 strokeWidth={strokeWidth}
               />
               <Circle
-                stroke={THEME.accent}
+                stroke={colors.accent}
                 fill="none"
                 cx={size / 2}
                 cy={size / 2}
@@ -102,34 +93,107 @@ export const PedometerWidget = ({ dailyGoal = 5000 }) => {
             </G>
           </Svg>
           <View style={styles.innerContent}>
-            <Text style={styles.stepText}>{totalSteps}</Text>
-            <Text style={styles.goalText}>/ {dailyGoal}</Text>
+            <Text style={[styles.stepText, { color: colors.text }]}>{stepsCount}</Text>
+            <Text style={[styles.goalText, { color: colors.textMuted }]}>/ {stepsGoal} steps</Text>
+          </View>
+        </View>
+
+        {/* Dynamic status helper */}
+        <View style={styles.statusBadgeRow}>
+          <View style={[styles.statusBadge, { backgroundColor: colors.surfaceAlt }]}>
+            <View style={[
+              styles.statusDot, 
+              { backgroundColor: isPedometerAvailable === 'true' ? colors.accent : colors.warning }
+            ]} />
+            <Text style={[styles.statusText, { color: colors.textMuted }]}>
+              {isPedometerAvailable === 'true' 
+                ? "Pedometer Active" 
+                : isPedometerAvailable === 'checking'
+                ? "Checking Sensors..."
+                : "Shake Device / Use Sim"
+              }
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Expanded Sandbox Controls */}
+      {isSandboxExpanded && (
+        <View style={[styles.sandboxContainer, { backgroundColor: colors.surfaceAlt, borderColor: colors.border }]}>
+          <View style={styles.sandboxHeader}>
+            <Ionicons name="walk" size={14} color={colors.accent} />
+            <Text style={[styles.sandboxTitle, { color: colors.text }]}>Walk & Steps Simulator</Text>
+          </View>
+          <Text style={[styles.sandboxSub, { color: colors.textMuted }]}>
+            Simulate physical steps to test progress meters, goal-completion triggers, and visual rings.
+          </Text>
+          
+          <View style={styles.sandboxActions}>
+            <TouchableOpacity 
+              onPress={() => addSteps(100)}
+              style={[styles.sandboxBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
+            >
+              <Text style={[styles.sandboxBtnText, { color: colors.accent }]}>+100 Steps</Text>
+            </TouchableOpacity>
+
+            <View style={styles.walkSimToggleRow}>
+              <Text style={[styles.walkSimLabel, { color: colors.text }]}>Auto-Walk</Text>
+              <Switch
+                value={isAutoWalking}
+                onValueChange={setIsAutoWalking}
+                trackColor={{ false: colors.border, true: colors.accent }}
+                thumbColor="#fff"
+              />
+            </View>
           </View>
         </View>
       )}
-    </View>
+    </Card>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: THEME.card,
-    borderRadius: THEME.radius,
-    padding: 24,
-    marginVertical: 12,
+    marginVertical: spacing.xs,
+    width: '94%',
+    alignSelf: 'center',
+    padding: spacing.md,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 5,
+    marginBottom: spacing.md,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerIcon: {
+    marginRight: spacing.xs,
   },
   title: {
-    color: THEME.text,
     fontSize: 18,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+  },
+  sandboxToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    gap: 4,
+  },
+  sandboxToggleText: {
+    fontSize: 10,
     fontWeight: '600',
-    marginBottom: 20,
-    alignSelf: 'flex-start',
+  },
+  mainContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.xs,
   },
   progressContainer: {
     position: 'relative',
@@ -142,26 +206,80 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   stepText: {
-    color: THEME.text,
     fontSize: 32,
-    fontWeight: 'bold',
+    fontWeight: '800',
   },
   goalText: {
-    color: '#94A3B8', // Slate 400
-    fontSize: 14,
-    marginTop: 4,
-    fontWeight: '500',
+    fontSize: 12,
+    marginTop: 2,
+    fontWeight: '600',
   },
-  fallbackContainer: {
-    padding: 16,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 12,
-    width: '100%',
+  statusBadgeRow: {
+    marginTop: spacing.md,
+    flexDirection: 'row',
   },
-  fallbackText: {
-    color: '#94A3B8',
-    fontSize: 14,
-    textAlign: 'center',
-    lineHeight: 22,
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 20,
+    gap: 6,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+  },
+  statusText: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  sandboxContainer: {
+    marginTop: spacing.md,
+    borderRadius: 16,
+    padding: spacing.md,
+    borderWidth: 1,
+  },
+  sandboxHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 4,
+  },
+  sandboxTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  sandboxSub: {
+    fontSize: 11,
+    lineHeight: 15,
+    marginBottom: spacing.md,
+  },
+  sandboxActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  sandboxBtn: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sandboxBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  walkSimToggleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  walkSimLabel: {
+    fontSize: 12,
+    fontWeight: '600',
   },
 });

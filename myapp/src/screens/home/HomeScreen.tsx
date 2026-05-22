@@ -10,7 +10,7 @@ import { typography } from '../../../theme/typography';
 import { wp, hp, rf } from '../../utils/responsive';
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import { BottomTabParamList, RootStackParamList } from '../../navigation/types';
-import { CompositeScreenProps, useNavigation } from '@react-navigation/native';
+import { CompositeScreenProps, useNavigation, useIsFocused } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, withDelay, Easing, runOnJS } from 'react-native-reanimated';
 import Svg, { Path, Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
@@ -20,6 +20,10 @@ import YoutubeIframe from 'react-native-youtube-iframe';
 import { yogaContent } from '../../data/yogaContent';
 import { ForestBackground } from '../../components/common/ForestBackground';
 import { SettingsModal } from '../../components/common/SettingsModal';
+import { db, auth } from '../../utils/firebase';
+import { collection, addDoc, doc, setDoc } from 'firebase/firestore';
+import { updateUserStreak, isYesterday } from '../../utils/streakService';
+import { syncUserDataFromFirestore } from '../../utils/syncService';
 
 type Props = CompositeScreenProps<
   BottomTabScreenProps<BottomTabParamList, 'Home'>,
@@ -41,11 +45,14 @@ const MOODS = [
 export default function HomeScreen({ navigation }: Props) {
   const { t } = useTranslation();
   const { colors, isDark, toggleTheme } = useTheme();
-  const { entries, streak, addEntry } = useMoodStore();
+  const { entries, streak, streakBroken, addEntry } = useMoodStore();
   const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   
-  const today = new Date().toISOString().split('T')[0];
+  const isFocused = useIsFocused();
+  const [todayDate, setTodayDate] = useState(new Date().toISOString().split('T')[0]);
+  
+  const today = todayDate;
   const todaysMood = entries.find(e => e.date === today);
   
   // Affirmation based on day of year
@@ -62,6 +69,22 @@ export default function HomeScreen({ navigation }: Props) {
   
   const cardScale = useSharedValue(1);
 
+  // Dynamic date recalculation and background sync on screen focus
+  useEffect(() => {
+    if (isFocused) {
+      const currentToday = new Date().toISOString().split('T')[0];
+      setTodayDate(currentToday);
+      
+      const user = auth.currentUser;
+      if (user) {
+        console.log("[HomeScreen] Screen focused, running background sync...");
+        syncUserDataFromFirestore(user.uid).catch(err => {
+          console.warn("[HomeScreen] Background sync failed:", err);
+        });
+      }
+    }
+  }, [isFocused]);
+
   useEffect(() => {
     headerOpacity.value = withTiming(1, { duration: 600, easing: Easing.out(Easing.cubic) });
     headerTranslateY.value = withTiming(0, { duration: 600, easing: Easing.out(Easing.cubic) });
@@ -77,6 +100,86 @@ export default function HomeScreen({ navigation }: Props) {
     transform: [{ translateY: moodTranslateY.value }]
   }));
 
+  const saveQuickMood = (val: number) => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    // Generate/Reuse Firestore document ID synchronously
+    const docId = todaysMood?.id || doc(collection(db, 'users', user.uid, 'tracker_logs')).id;
+
+    // 1. Optimistic Zustand Store update (instant UI change!)
+    addEntry({
+      id: docId,
+      date: today,
+      moodLevel: val,
+      symptoms: todaysMood?.symptoms || [],
+      sleepHours: todaysMood?.sleepHours || 7,
+      sleepQuality: todaysMood?.sleepQuality || 'okay',
+      thoughtDiary: todaysMood?.thoughtDiary || '',
+      appetite: todaysMood?.appetite || 'normal',
+    });
+
+    // 2. Optimistic Streak calculation
+    try {
+      const store = useMoodStore.getState();
+      const currentStreak = store.streak;
+      let lastPostDate = '';
+      
+      const uniqueDates = Array.from(new Set(store.entries.map(e => e.date))).sort((a, b) => b.localeCompare(a));
+      const datesWithoutToday = uniqueDates.filter(d => d !== today);
+      if (datesWithoutToday.length > 0) {
+        lastPostDate = datesWithoutToday[0];
+      }
+
+      let newStreak = currentStreak;
+      if (lastPostDate === '') {
+        newStreak = 1;
+      } else if (isYesterday(lastPostDate, today)) {
+        newStreak = currentStreak + 1;
+      } else if (lastPostDate !== today) {
+        newStreak = 1;
+      }
+
+      store.setStreak(newStreak);
+      store.setStreakBroken(false);
+    } catch (streakErr) {
+      console.warn("[HomeScreen] Failed to calculate optimistic streak:", streakErr);
+    }
+
+    // 3. Background asynchronous Firebase persistence (non-blocking)
+    (async () => {
+      try {
+        if (todaysMood && todaysMood.id) {
+          // If the entry already exists, update it!
+          await setDoc(doc(db, 'users', user.uid, 'tracker_logs', todaysMood.id), {
+            mood_level: val,
+            user_id: user.uid,
+            updated_at: new Date().toISOString()
+          }, { merge: true });
+          console.log("[HomeScreen] Background: Updated existing quick mood in Firestore");
+        } else {
+          // Create a new entry using the pre-generated document ID
+          await setDoc(doc(db, 'users', user.uid, 'tracker_logs', docId), {
+            log_date: today,
+            mood_level: val,
+            symptoms: [],
+            sleep_hours: 7,
+            sleep_quality: 'okay',
+            thought_diary: '',
+            user_id: user.uid,
+            created_at: new Date().toISOString()
+          });
+          console.log("[HomeScreen] Background: Created new quick mood in Firestore:", docId);
+        }
+        
+        // Update streak remotely (syncing back is handled automatically)
+        await updateUserStreak(user.uid, today, 'mood', { moodLevel: val });
+      } catch (err) {
+        console.warn('[HomeScreen] Background quick mood save warning (offline/network issue):', err);
+      }
+    })();
+  };
+
   const handleMoodSelect = (val: number) => {
     HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Light);
     
@@ -84,13 +187,7 @@ export default function HomeScreen({ navigation }: Props) {
     moodOpacity.value = withTiming(0, { duration: 400 });
     moodTranslateY.value = withTiming(-20, { duration: 400 }, (finished) => {
       if (finished) {
-        runOnJS(addEntry)({
-          date: today,
-          moodLevel: val,
-          symptoms: [],
-          sleepHours: 7,
-          sleepQuality: 'okay'
-        });
+        runOnJS(saveQuickMood)(val);
       }
     });
   };
@@ -108,7 +205,7 @@ export default function HomeScreen({ navigation }: Props) {
       <AnimatedView style={[styles.header, headerAnimatedStyle]}>
         <View style={styles.headerLeft}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={[styles.greeting, { color: colors.text }]}>{t('home.greeting', { time: greeting })} {t('home.friend')}</Text>
+            <Text style={[styles.greeting, { color: colors.text }]}>{t('home.greeting', { time: t(`home.${greeting}`) })} {t('home.friend')}</Text>
             {/* Tiny botanical SVG */}
             <Svg width="24" height="24" viewBox="0 0 24 24" style={{ marginLeft: 8 }}>
               <Path d="M12 22V10M12 10C8 10 4 14 4 14C4 14 8 18 12 18M12 10C16 10 20 6 20 6C20 6 16 2 12 2" stroke={colors.accent} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
@@ -136,6 +233,19 @@ export default function HomeScreen({ navigation }: Props) {
           </TouchableOpacity>
         </View>
       </AnimatedView>
+
+      {/* Streak Broken Banner */}
+      {streakBroken && (
+        <View style={[styles.brokenStreakBanner, { backgroundColor: isDark ? 'rgba(44,19,19,0.90)' : 'rgba(254,242,242,0.90)', borderColor: isDark ? '#EF4444' : '#FCA5A5' }]}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: hp(0.5) }}>
+            <Ionicons name="flame" size={22} color="#EF4444" style={{ marginRight: 6 }} />
+            <Text style={[styles.brokenStreakTitle, { color: isDark ? '#FCA5A5' : '#B91C1C' }]}>Streak Broken!</Text>
+          </View>
+          <Text style={[styles.brokenStreakText, { color: isDark ? '#F87171' : '#DC2626' }]}>
+            You missed a check-in day. Complete any daily entry today to start a new streak!
+          </Text>
+        </View>
+      )}
 
       {/* Mood Banner */}
       {!todaysMood && (
@@ -191,7 +301,7 @@ export default function HomeScreen({ navigation }: Props) {
           <GridCard 
             title={t('home.dailyCheckIn')} subtitle={t('home.trackMood')} 
             colorLight={colors.reflectLight} colorDark={colors.reflect} delay={120} 
-            onPress={() => { HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Light); navigation.navigate('NewThoughtEntry'); }}
+            onPress={() => { HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Light); navigation.navigate('Track'); }}
             icon={<Svg width="40" height="40" viewBox="0 0 24 24" fill="none"><Path d="M12 4v16M4 12h16" stroke={isDark ? colors.text : colors.reflect} strokeWidth="2" strokeLinecap="round" /></Svg>}
           />
           <GridCard 
@@ -275,7 +385,16 @@ export default function HomeScreen({ navigation }: Props) {
 
       </View>
       </ScrollView>
-      <SettingsModal visible={showSettings} onClose={() => setShowSettings(false)} />
+      <SettingsModal 
+        visible={showSettings} 
+        onClose={() => setShowSettings(false)} 
+        onNavigateToUserDetails={() => {
+          setShowSettings(false);
+          setTimeout(() => {
+            navigation.navigate('UserDetails');
+          }, 150);
+        }}
+      />
     </View>
   );
 }
@@ -503,5 +622,28 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     marginBottom: hp(2),
+  },
+  brokenStreakBanner: {
+    width: wp(90),
+    alignSelf: 'center',
+    borderRadius: 24,
+    padding: hp(2.5),
+    marginBottom: hp(3),
+    borderWidth: 1,
+    shadowColor: '#EF4444',
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  brokenStreakTitle: {
+    fontFamily: typography.display,
+    fontSize: rf(16),
+    fontWeight: '800',
+  },
+  brokenStreakText: {
+    fontFamily: typography.body,
+    fontSize: rf(13),
+    fontWeight: '600',
+    lineHeight: rf(18),
   }
 });

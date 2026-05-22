@@ -1,8 +1,6 @@
-# 🍃 Mindarc Mental Health & Wellness Suite
+# 🍃 MindArc — Mental Health & Wellness Suite
 
-Welcome to **Mindarc**, a premium, production-grade mental health and wellness application. Mindarc is designed to help users track their mental state, challenge negative thoughts via Cognitive Behavioral Therapy (CBT) practices, engage in mindfulness exercises, monitor daily physical activity, and obtain medical-grade AI wellness coaching.
-
-The platform is architected with a **React Native (Expo) Mobile Frontend** and a high-performance **Python (FastAPI) Backend** integrated with Google Gemini AI models.
+> **A premium, production-grade mobile wellness application** built with React Native (Expo) and a Python (FastAPI) AI backend. MindArc helps users track mental health, journal thoughts, practice mindfulness, monitor physical activity, and access emergency mental health support — all in English and Kannada.
 
 ---
 
@@ -10,132 +8,241 @@ The platform is architected with a **React Native (Expo) Mobile Frontend** and a
 
 ```
 MentalHealthApp/
-├── myapp/                  # Mobile Frontend (React Native + Expo)
-│   ├── assets/             # Images, static logos, and local high-fidelity audio
+├── myapp/                        # 📱 Mobile Frontend (React Native + Expo SDK 54)
+│   ├── assets/
+│   │   └── images/               # App icons, splash, and local audio files (.mp3)
 │   ├── src/
-│   │   ├── components/     # UI elements (Forest Background, Settings Modals, etc.)
-│   │   ├── i18n/           # Internationalization (English & Kannada translations)
-│   │   ├── navigation/     # Native navigation containers (Tabs & Stack)
-│   │   ├── screens/        # Screen modules (Home, Auth, Learn, Relax, Activity)
-│   │   ├── store/          # Local state stores (Zustand)
-│   │   └── utils/          # Core utilities (Firebase, Sync Engines)
-│   └── tsconfig.json       # TypeScript compiler settings
+│   │   ├── components/           # Reusable UI (ForestBackground, SettingsModal, Cards)
+│   │   ├── data/                 # Static data (educational modules, yoga content)
+│   │   ├── hooks/                # Custom React hooks (useTheme, usePedometer)
+│   │   ├── i18n/                 # Bilingual translations (en.ts + kn.ts — Kannada)
+│   │   ├── navigation/           # Stack + Bottom Tab navigators
+│   │   ├── screens/              # All screen modules (Home, Auth, Tracker, Learn, Relax…)
+│   │   ├── store/                # Global state (Zustand — mood, audio, activity, auth)
+│   │   └── utils/                # Firebase, sync engine, notifications, audio controller
+│   ├── .env.example              # ← Copy to .env and fill in your keys
+│   ├── app.json                  # Expo config (EAS project ID, Android package, plugins)
+│   └── tsconfig.json             # TypeScript compiler settings
 │
-└── backend/                # LangChain & Gemini-powered FastAPI Backend
-    ├── main.py             # Server endpoints & lazy-loading AI pipelines
-    ├── requirements.txt    # Backend library list
-    └── .env                # Gemini API tokens and backend secrets
+└── backend/                      # 🤖 AI Backend (Python 3.12 + FastAPI + LangChain)
+    ├── main.py                   # FastAPI server — Myth Buster & Lifestyle Coach endpoints
+    ├── requirements.txt          # Python dependencies
+    ├── .env.example              # ← Copy to .env and fill in your Gemini API keys
+    └── README.md                 # Backend-specific notes
 ```
 
 ---
 
-## ✨ Features & Functionalities
+## ✨ Features
 
-### 📱 1. Mobile Frontend (`myapp`)
-*   **Daily Check-In & Mood Tracker**:
-    *   Log daily emotional scores ($1$ to $5$) using custom interactive sliders.
-    *   Monitor standard somatic symptoms (Headache, Fatigue, Anxiety, Irritability).
-    *   Record sleep duration and sleep quality (Poor, Okay, Good, Great).
-    *   Analyze mental trends using the interactive **Mood History** graph showing full emotional shifts.
-*   **CBT Thought Diary**:
-    *   A structured cognitive-behavioral tool to identify and combat cognitive distortions.
-    *   Fields for **Situation**, **Automatic Thought**, **Emotion & Intensity**, **Evidence FOR**, **Evidence AGAINST**, and a **Balanced Thought** rebuild.
-*   **Immersive Nature Sounds**:
-    *   Listen to premium, loopable nature audio tracks (**Heavy Rain**, **Forest Birds**, and **Ocean Waves**) stored locally in the app.
-    *   Integrated with real-time audio mixers, volume controls, and playback engines (powered by `expo-av`).
-*   **Box Breathing**:
-    *   Perform paced 4-4-4-4 breathing exercises guided by fluid, interactive scale animations and cycle counters.
-*   **Yoga & Movement**:
-    *   Includes handpicked Morning, Stretch, and Sleep yoga programs using high-fidelity native YouTube players.
-*   **Pedometer Step Tracking**:
-    *   Uses native hardware accelerometer sensors to log real-time steps against custom daily goals.
-    *   Configurable daily alerts that prompt users to stay active and log their checks at exactly 6:00 PM.
-*   **Universal Bilingual Support**:
-    *   Instantly switches the **entire** app (forms, logs, menus, system dialogs) between **English** and **Kannada** seamlessly without needing a restart.
-*   **Light & Dark Theme Engine**:
-    *   Vibrant, tailor-made visual profiles: custom Forest designs for light mode and soft, premium deep space gradients for dark mode.
-*   **Crisis Emergency Hub**:
-    *   Provides immediate, direct-call buttons linking users to free national mental health lifelines.
-*   **User Profile Management (Cloud Sync)**:
-    *   Fully customizable user profiles built directly inside the main settings panel.
-    *   Users can update their **Display Name** and multiline **Personal Bio** directly in the app.
-    *   Information is securely transmitted and stored in Firebase Firestore under the `users` collection, linked via their unique authenticated UID.
+### 📱 Mobile App (`myapp/`)
 
-### 🤖 2. Intelligent Backend (`backend`)
-*   **AI Wellness Assessment (Lifestyle Coach)**:
-    *   Feeds screen times, sleep profiles, and caffeine counts to Google Gemini AI via LangChain.
-    *   Generates a personalized **Better Living Summary** detailing strengths, optimization zones, and daily habit tips.
-*   **AI Myth Buster**:
-    *   Submit popular mental health myths or anxiety misconceptions.
-    *   Gemini validates the query and returns a scientifically accurate **FACT** along with a medical-grade **EXPLANATION**.
+| Feature | Description |
+|---|---|
+| **Daily Check-In & Mood Tracker** | Log mood (1–5), symptoms, sleep hours & quality, appetite level |
+| **Mood History** | Interactive chart showing emotional trends over time |
+| **CBT Thought Diary** | Structured Cognitive Behavioral Therapy reframing journal |
+| **Nature Sounds** | 7 premium loopable soundscapes (Rain, Forest, Ocean, Stream, Thunder, Wind, Frogs) with floating playback bar |
+| **Box Breathing** | Guided 4-4-4-4 paced breathing with animated visuals |
+| **Yoga & Movement** | Curated Morning, Stretch & Sleep yoga programs via YouTube players |
+| **Pedometer** | Real-time step counter using hardware accelerometer against user-set daily goals |
+| **Interactive Learn Modules** | 6 CBT educational modules with animated simulations (Stress Meter, Ripple Effect, Myth Buster, Breathing Box, Bubble Pop) |
+| **Crisis Support Hub** | Direct-call buttons for 5 Indian helplines (e112, Tele-MANAS, KIRAN, Vandrevala, AASRA) + personal therapist & custom contact |
+| **Personal Dashboard** | Cloud-synced profile — name, bio, age, gender, step goal, water goal, focus area, workout preference |
+| **Settings** | Inline profile editing, Dark/Light theme toggle, English/Kannada language switcher |
+| **Streak System** | Daily check-in streak counter with broken-streak banner |
+| **Bilingual (i18n)** | Full English & Kannada support across all screens, forms, and navigation |
 
-### ☁️ 3. Authentication & Database Cloud Sync
-*   **Firebase Authentication**: Includes secure Email/Password logins and unified Google Sign-In protocols.
-*   **Zustand-to-Firestore Sync Engine**:
-    *   Ensures full offline-first functionality.
-    *   Whenever authentication states change on startup, the engine queries Firebase Firestore for the user's logged history (`tracker_logs` and `thought_logs`), parses them, and merges them directly into local in-memory stores.
+### 🤖 AI Backend (`backend/`)
+
+| Endpoint | Description |
+|---|---|
+| `POST /api/v1/myth-check` | AI Myth Buster — validates mental health myths via Google Gemini |
+| `POST /api/v1/lifestyle-plan` | Lifestyle Wellness Coach — generates personalized Better Living Summary |
+| `GET /health` | Health check ping |
+
+### ☁️ Cloud & Auth
+
+- **Firebase Authentication** — Email/Password + Google Sign-In
+- **Firestore** — User profiles, mood tracker logs, thought diary entries
+- **Zustand + AsyncStorage** — Offline-first with automatic Firestore sync on focus
+- **Expo Notifications** — Daily check-in reminders & 2-hour wellness prompts
 
 ---
 
-## 🛠️ Security and Git Safety
+## 🛠️ Tech Stack
 
-### 🔒 Do we need to ignore `google-services.json`?
-**Yes, absolutely!** 
-The `google-services.json` file contains your private database keys, Firebase API tokens, database URIs, client identifiers, and project numbers. Committing this file to public version control (like GitHub) will expose your Firebase services to malicious API requests, database scrapers, and spam.
-
-Mindarc uses a highly robust unified [.gitignore](file:///c:/projects/side-projects\new-mental-app\MentalHealthApp\.gitignore) located at the root of `MentalHealthApp/` which automatically ignores:
-*   `google-services.json` and all copies (e.g. `google-services (1).json`)
-*   Local environment sheets (`.env`, `myapp/.env`, `backend/.env`)
-*   Python virtual environments (`.venv/`, `venv/`)
-*   Dependency modules (`node_modules/`, `__pycache__/`)
-
----
-
-## 🚀 Setup and How to Run
-
-### 1. Prerequisite Environments
-Ensure you have `Node.js (v18+)`, `Python (3.11 or 3.12)`, and the fast Python package installer `uv` installed.
+| Layer | Technology |
+|---|---|
+| Mobile Framework | React Native + Expo SDK 54 |
+| Language | TypeScript (strict mode) |
+| Navigation | React Navigation 7 (Stack + Bottom Tabs) |
+| State Management | Zustand + AsyncStorage persistence |
+| Auth & Database | Firebase v11 (Auth + Firestore) |
+| AI Backend | Python 3.12 + FastAPI + LangChain + Google Gemini 2.5 Flash |
+| Audio | expo-av |
+| Animations | react-native-reanimated + react-native-svg |
+| Localization | react-i18next (en + kn) |
+| Build | EAS Build (Expo Application Services) |
 
 ---
 
-### 2. Run the Backend (`backend/`)
-1.  Navigate to the backend directory:
-    ```bash
-    cd MentalHealthApp/backend
-    ```
-2.  Create your local `.env` file (which is ignored by Git) based on the example:
-    ```bash
-    cp .env.example .env
-    ```
-3.  Add your keys inside `backend/.env`:
-    ```env
-    GOOGLE_API_KEY=your_gemini_api_key_here
-    GOOGLE_API_KEY_2=your_gemini_api_key_here
-    ```
-4.  Launch the FastAPI server inside the `uv` environment:
-    ```powershell
-    uv run python main.py
-    ```
-    *The backend is now live and hot-reloading at `http://localhost:8000` (or your local IP `http://192.168.1.37:8000`).*
+## 🚀 Setup & Running Locally
+
+### Prerequisites
+- **Node.js** v18 or later
+- **Python** 3.11 or 3.12
+- **uv** Python package manager (`pip install uv` or see [uv docs](https://docs.astral.sh/uv/))
+- A **Firebase project** with Authentication and Firestore enabled
+- A **Google Gemini API Key** from [Google AI Studio](https://aistudio.google.com/app/apikey)
 
 ---
 
-### 3. Run the Frontend Mobile App (`myapp/`)
-1.  Navigate to the mobile directory:
-    ```bash
-    cd MentalHealthApp/myapp
-    ```
-2.  Install dependencies:
-    ```bash
-    npm install
-    ```
-3.  Add the network parameters in your `myapp/.env` file:
-    ```env
-    # Your host machine's Wi-Fi IPv4 address so the phone can connect
-    EXPO_PUBLIC_API_URL=http://192.168.1.37:8000
-    ```
-4.  Start the Expo development server:
-    ```bash
-    npx expo start
-    ```
-5.  Scan the displayed QR code with the **Expo Go** application on your iOS or Android device. Both systems will communicate dynamically over the local Wi-Fi network!
+### 1. Clone the Repo
+
+```bash
+git clone https://github.com/shrinidhianchan/MentalHealthApp.git
+cd MentalHealthApp
+```
+
+---
+
+### 2. Run the Backend
+
+```bash
+cd backend
+```
+
+Copy and fill in the environment variables:
+```bash
+cp .env.example .env
+# Edit .env with your Gemini API keys
+```
+
+Start the FastAPI server:
+```bash
+uv run python main.py
+```
+> Server starts at `http://localhost:8000`. Access the API docs at `http://localhost:8000/docs`.
+
+---
+
+### 3. Run the Mobile App
+
+```bash
+cd myapp
+npm install
+```
+
+Copy and fill in the environment variables:
+```bash
+cp .env.example .env
+# Edit .env — set EXPO_PUBLIC_API_URL to your machine's local IP (e.g. http://192.168.1.100:8000)
+```
+
+Place your Firebase credentials file:
+```
+myapp/google-services.json   ← Android (download from Firebase Console)
+```
+
+Start the Expo dev server:
+```bash
+npx expo start
+```
+> Scan the QR code with **Expo Go** on your phone. Both devices must be on the same Wi-Fi network.
+
+---
+
+## 📦 Build an APK (Android)
+
+MindArc uses **EAS Build** (Expo Application Services) for cloud-based APK generation — no Android SDK required locally.
+
+### One-time setup
+```bash
+npm install -g eas-cli
+eas login
+```
+
+### Build a preview APK (installable `.apk`)
+```bash
+cd myapp
+eas build --platform android --profile preview
+```
+
+> The build runs on Expo's servers (~5–15 minutes). A download link for the `.apk` is provided on completion.
+
+---
+
+## 🔒 Security & Secrets
+
+> ⚠️ **Never commit `.env` files or `google-services.json` to version control.**
+
+The `.gitignore` at the project root automatically excludes:
+- `myapp/.env` and `backend/.env` (your real API keys)
+- `google-services.json` (Firebase Android credentials)
+- `GoogleService-Info.plist` (Firebase iOS credentials)
+- Python virtual environments (`.venv/`, `venv/`)
+- Node modules, build artifacts, and IDE configs
+
+Use the `.env.example` files as templates for onboarding new contributors.
+
+---
+
+## 📁 Key Environment Variables
+
+### `myapp/.env`
+
+| Variable | Description |
+|---|---|
+| `EXPO_PUBLIC_API_URL` | Backend URL (local IP or Render deployment) |
+| `EXPO_PUBLIC_SUPABASE_URL` | Supabase project URL |
+| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | Supabase anonymous public key |
+| `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` | Google OAuth Web Client ID for Sign-In |
+| `GOOGLE_API_KEY` | Gemini key (loaded by backend on Expo env export) |
+| `GOOGLE_API_KEY_2` | Second Gemini key for Lifestyle Coach |
+
+### `backend/.env`
+
+| Variable | Description |
+|---|---|
+| `GOOGLE_API_KEY` | Gemini API key → Myth Buster endpoint |
+| `GOOGLE_API_KEY_2` | Gemini API key → Lifestyle Coach endpoint |
+| `EXPO_PUBLIC_API_URL` | Backend's own public URL (for CORS reference) |
+
+---
+
+## 🌐 Languages Supported
+
+| Language | Code | Coverage |
+|---|---|---|
+| English | `en` | 100% |
+| Kannada (ಕನ್ನಡ) | `kn` | 100% |
+
+---
+
+## 📋 Changelog Highlights
+
+- **v1.2.0** — Full Kannada localization across all educational modules and simulations
+- **v1.1.5** — Floating Nature Sounds playback bar above navigation
+- **v1.1.0** — Crisis Hub with 5 Indian helplines + personal therapist/contact slots
+- **v1.0.5** — Appetite tracking in Daily Check-In + library guidelines
+- **v1.0.0** — Initial release with Mood Tracker, CBT Diary, Breathing, Nature Sounds, Yoga, Learn Modules
+
+---
+
+## 🤝 Contributing
+
+1. Fork the repo
+2. Create a feature branch: `git checkout -b feat/your-feature`
+3. Make your changes and commit: `git commit -m "feat: add your feature"`
+4. Push and open a Pull Request
+
+---
+
+## 📄 License
+
+MIT License — see [LICENSE](LICENSE) for details.
+
+---
+
+<p align="center">Built with 🍃 care for mental wellness</p>

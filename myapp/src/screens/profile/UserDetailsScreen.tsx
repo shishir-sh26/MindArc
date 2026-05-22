@@ -18,7 +18,7 @@ export default function UserDetailsScreen() {
   const { user } = useAuthStore();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
-  const [isLoading, setIsLoading] = useState(true);
+  const [isFetchingBackground, setIsFetchingBackground] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   // Form Fields
@@ -33,7 +33,11 @@ export default function UserDetailsScreen() {
 
   useEffect(() => {
     if (user) {
+      // Instantly pre-populate displayName from local auth store
+      setName(user.displayName || '');
+      
       const fetchUserDetails = async () => {
+        setIsFetchingBackground(true);
         try {
           const userDoc = await getDoc(doc(db, 'users', user.uid));
           if (userDoc.exists()) {
@@ -46,13 +50,11 @@ export default function UserDetailsScreen() {
             if (data.waterGoal) setWaterGoal(data.waterGoal.toString());
             if (data.focusArea) setFocusArea(data.focusArea);
             if (data.preferredWorkout) setPreferredWorkout(data.preferredWorkout);
-          } else {
-            setName(user.displayName || '');
           }
         } catch (e) {
           console.warn("Couldn't retrieve user details:", e);
         } finally {
-          setIsLoading(false);
+          setIsFetchingBackground(false);
         }
       };
       fetchUserDetails();
@@ -63,7 +65,8 @@ export default function UserDetailsScreen() {
     if (!user) return;
     setIsSaving(true);
     try {
-      await setDoc(doc(db, 'users', user.uid), {
+      // Fire-and-forget background synchronization
+      setDoc(doc(db, 'users', user.uid), {
         name,
         bio,
         age: parseInt(age) || 0,
@@ -74,8 +77,11 @@ export default function UserDetailsScreen() {
         preferredWorkout,
         email: user.email,
         updated_at: new Date().toISOString()
-      }, { merge: true });
+      }, { merge: true }).catch(e => {
+        console.warn("Background Firestore sync failed:", e);
+      });
 
+      // Snappy response: Alert and navigate back instantly!
       Alert.alert("Success", "All personal details updated securely!");
       navigation.goBack();
     } catch (e) {
@@ -89,14 +95,6 @@ export default function UserDetailsScreen() {
   const focusOptions = ["Anxiety Reduction", "Mindfulness", "Quality Sleep", "Daily Productivity", "Stress Management"];
   const workoutOptions = ["Yoga", "Box Breathing Walks", "Strength Training", "Stretching", "Cardio Run"];
 
-  if (isLoading) {
-    return (
-      <View style={[styles.centeredContainer, { backgroundColor: colors.background }]}>
-        <ActivityIndicator size="large" color={colors.accent} />
-      </View>
-    );
-  }
-
   return (
     <View style={[styles.outerContainer, { backgroundColor: colors.background }]}>
       <ForestBackground bgHeightRatio={0.35} showBottomPlants />
@@ -109,7 +107,17 @@ export default function UserDetailsScreen() {
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
             <Ionicons name="arrow-back" size={24} color={colors.text} />
           </TouchableOpacity>
-          <Text style={[styles.title, { color: colors.text }]}>Personal Dashboard</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+            <Text style={[styles.title, { color: colors.text }]}>Personal Dashboard</Text>
+            {isFetchingBackground && (
+              <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: isDark ? 'rgba(74, 117, 89, 0.25)' : 'rgba(74, 117, 89, 0.1)', paddingHorizontal: 8, paddingVertical: 4, borderRadius: radii.pill }}>
+                <ActivityIndicator size="small" color={colors.accent} style={{ marginRight: 5 }} />
+                <Text style={{ fontFamily: typography.body, fontSize: rf(11), color: colors.accent, fontWeight: '600' }}>
+                  Syncing...
+                </Text>
+              </View>
+            )}
+          </View>
           <Text style={[styles.subtitle, { color: colors.textMuted }]}>
             Maintain your mental wellness profile and preferences
           </Text>

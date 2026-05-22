@@ -9,6 +9,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../utils/firebase';
 import { useAuthStore } from '../store/authStore';
 import { syncUserDataFromFirestore } from '../utils/syncService';
+import { useActivityStore } from '../store/activityStore';
 
 import AuthScreen from '../screens/auth/AuthScreen';
 import ModuleDetailScreen from '../screens/learn/ModuleDetailScreen';
@@ -31,6 +32,8 @@ export const RootNavigator = () => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setLoading(false);
+      // Dynamic user-scoped activity/steps loading
+      useActivityStore.getState().loadUserActivity(currentUser ? currentUser.uid : null);
       if (currentUser) {
         syncUserDataFromFirestore(currentUser.uid);
       }

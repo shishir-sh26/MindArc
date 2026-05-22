@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ForestBackground } from '../../components/common/ForestBackground';
 import { db, auth } from '../../utils/firebase';
@@ -6,13 +6,14 @@ import { collection, addDoc, doc, setDoc } from 'firebase/firestore';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { useTheme } from '../../hooks/useTheme';
 import { useMoodStore } from '../../store/moodStore';
+import { updateUserStreak, isYesterday } from '../../utils/streakService';
 import { Card } from '../../components/common/Card';
 import { Button } from '../../components/common/Button';
 import { spacing } from '../../../theme/spacing';
 import Slider from '@react-native-community/slider';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList, BottomTabParamList } from '../../navigation/types';
-import { CompositeNavigationProp } from '@react-navigation/native';
+import { CompositeNavigationProp, useIsFocused } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 
 type TrackerNavigationProp = CompositeNavigationProp<
@@ -42,64 +43,133 @@ export default function TrackerScreen({ navigation }: Props) {
   const addEntry = useMoodStore((state) => state.addEntry);
   const getEntryByDate = useMoodStore((state) => state.getEntryByDate);
 
-  const today = new Date().toISOString().split('T')[0];
-  const existingEntry = getEntryByDate(today);
+  const isFocused = useIsFocused();
+  const [todayDate, setTodayDate] = useState(new Date().toISOString().split('T')[0]);
 
-  const [moodLevel, setMoodLevel] = useState<number>(existingEntry?.moodLevel || 3);
-  const [symptoms, setSymptoms] = useState<string[]>(existingEntry?.symptoms || []);
-  const [sleepHours, setSleepHours] = useState<number>(existingEntry?.sleepHours || 7);
-  const [sleepQuality, setSleepQuality] = useState<'poor' | 'okay' | 'good'>(existingEntry?.sleepQuality || 'okay');
-const [thoughtDiary, setThoughtDiary] = useState<string>(existingEntry?.thoughtDiary || '');
+  const existingEntry = getEntryByDate(todayDate);
+
+  const [moodLevel, setMoodLevel] = useState<number>(3);
+  const [symptoms, setSymptoms] = useState<string[]>([]);
+  const [sleepHours, setSleepHours] = useState<number>(7);
+  const [sleepQuality, setSleepQuality] = useState<'poor' | 'okay' | 'good'>('okay');
+  const [thoughtDiary, setThoughtDiary] = useState<string>('');
+  const [appetite, setAppetite] = useState<'poor' | 'low' | 'normal' | 'high' | 'excessive'>('normal');
+
+  // Dynamic reset / re-initialization on screen focus or date shifts
+  useEffect(() => {
+    if (isFocused) {
+      const currentToday = new Date().toISOString().split('T')[0];
+      setTodayDate(currentToday);
+      
+      const entry = getEntryByDate(currentToday);
+      setMoodLevel(entry?.moodLevel || 3);
+      setSymptoms(entry?.symptoms || []);
+      setSleepHours(entry?.sleepHours || 7);
+      setSleepQuality(entry?.sleepQuality || 'okay');
+      setThoughtDiary(entry?.thoughtDiary || '');
+      setAppetite(entry?.appetite || 'normal');
+    }
+  }, [isFocused]);
+
   const toggleSymptom = (s: string) => {
     setSymptoms(prev => prev.includes(s) ? prev.filter(x => x !== s) : [...prev, s]);
   };
 
-  const handleSave = async () => {
-    // 1. Validation Bouncer
-    if (symptoms.length === 0 && (!thoughtDiary || thoughtDiary.trim() === '')) {
-      Alert.alert("Empty Entry", "Please select a symptom or write a thought before saving.");
-      return;
-    }
-
-    // 2. Prepare Payload (Keys must match the SQL table exactly)
+  const handleSave = () => {
+    // 1. Prepare Payload & Determine ID
     const payload = {
-      log_date: today,
+      log_date: todayDate,
       mood_level: moodLevel,
       symptoms: symptoms,
       sleep_hours: sleepHours,
       sleep_quality: sleepQuality,
       thought_diary: thoughtDiary,
+      appetite: appetite,
     };
 
+    const user = auth.currentUser;
+    if (!user) {
+      Alert.alert("Error", "You must be logged in to save entries.");
+      return;
+    }
+
+    // Generate/Reuse Firestore document ID synchronously
+    const docId = existingEntry?.id || doc(collection(db, 'users', user.uid, 'tracker_logs')).id;
+
+    // 2. Optimistic Zustand Store update
+    addEntry({
+      id: docId,
+      date: todayDate,
+      moodLevel,
+      symptoms,
+      sleepHours,
+      sleepQuality,
+      thoughtDiary,
+      appetite,
+    });
+
+    // 3. Optimistic Streak calculation
     try {
-      // 3. Network Execution
-      const user = auth.currentUser;
-      if (user) {
-        // Tie logs to the authenticated user ID
-        await addDoc(collection(db, 'tracker_logs'), {
-          ...payload,
-          user_id: user.uid,
-          created_at: new Date().toISOString()
-        });
-      } else {
-        throw new Error("You must be logged in to save entries.");
+      const store = useMoodStore.getState();
+      const currentStreak = store.streak;
+      let lastPostDate = '';
+      
+      const uniqueDates = Array.from(new Set(store.entries.map(e => e.date))).sort((a, b) => b.localeCompare(a));
+      const datesWithoutToday = uniqueDates.filter(d => d !== todayDate);
+      if (datesWithoutToday.length > 0) {
+        lastPostDate = datesWithoutToday[0];
       }
 
-      // 4. Local State Backup & Navigation
-      addEntry({
-        date: today,
-        moodLevel,
-        symptoms,
-        sleepHours,
-        sleepQuality,
-        thoughtDiary,
-      });
-      
-      navigation.navigate('TrackerHistory');
+      let newStreak = currentStreak;
+      if (lastPostDate === '') {
+        newStreak = 1;
+      } else if (isYesterday(lastPostDate, todayDate)) {
+        newStreak = currentStreak + 1;
+      } else if (lastPostDate !== todayDate) {
+        newStreak = 1;
+      }
 
-    } catch (err: any) {
-      Alert.alert("Network Error", "Could not save to the database. " + err.message);
+      store.setStreak(newStreak);
+      store.setStreakBroken(false);
+    } catch (streakErr) {
+      console.warn("[TrackerScreen] Failed to calculate optimistic streak:", streakErr);
     }
+
+    // 4. Instant Navigation Transition (0ms UI lag)
+    navigation.navigate('TrackerHistory');
+
+    // 5. Background asynchronous Firebase persistence (non-blocking)
+    (async () => {
+      try {
+        if (existingEntry && existingEntry.id) {
+          // Update existing
+          await setDoc(doc(db, 'users', user.uid, 'tracker_logs', existingEntry.id), {
+            ...payload,
+            user_id: user.uid,
+            updated_at: new Date().toISOString()
+          }, { merge: true });
+          console.log("[TrackerScreen] Background: Updated entry in Firestore");
+        } else {
+          // Create new using synchronously pre-generated ID
+          await setDoc(doc(db, 'users', user.uid, 'tracker_logs', docId), {
+            ...payload,
+            user_id: user.uid,
+            created_at: new Date().toISOString()
+          });
+          console.log("[TrackerScreen] Background: Created new entry in Firestore:", docId);
+        }
+
+        // Background remote streak calculation and sync
+        await updateUserStreak(user.uid, todayDate, 'tracker', {
+          symptomsCount: symptoms.length,
+          sleepHours: sleepHours,
+          sleepQuality: sleepQuality,
+          hasThoughtDiary: !!thoughtDiary
+        });
+      } catch (backgroundErr: any) {
+        console.warn("[TrackerScreen] Background Firestore write warning (offline/network issue):", backgroundErr);
+      }
+    })();
   };
 
   return (
@@ -191,7 +261,37 @@ const [thoughtDiary, setThoughtDiary] = useState<string>(existingEntry?.thoughtD
           ))}
         </View>
       </Card>
-<Card style={styles.card}>
+
+      <Card style={styles.card}>
+        <Text style={[styles.label, { color: colors.text }]}>{t('tracker.appetite')}</Text>
+        <View style={styles.appetiteRow}>
+          {(['poor', 'low', 'normal', 'high', 'excessive'] as const).map(level => {
+            const isSelected = appetite === level;
+            return (
+              <TouchableOpacity
+                key={level}
+                onPress={() => setAppetite(level)}
+                style={[
+                  styles.appetiteBtn,
+                  { 
+                    backgroundColor: isSelected ? colors.accentSoft : colors.surfaceAlt,
+                    borderColor: isSelected ? colors.accent : colors.border
+                  }
+                ]}
+              >
+                <Text style={[
+                  styles.appetiteBtnText,
+                  { color: isSelected ? colors.accent : colors.text }
+                ]}>
+                  {t(`tracker.appetiteLevels.${level}`)}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      </Card>
+
+      <Card style={styles.card}>
         <Text style={[styles.label, { color: colors.text }]}>{t('home.thoughtDiary')}</Text>
         <Text style={[styles.subLabel, { color: colors.textMuted }]}>{t('home.logThoughts')}</Text>
         
@@ -309,5 +409,27 @@ const styles = StyleSheet.create({
     fontSize: 16,
     minHeight: 100,
     marginTop: spacing.sm,
+  },
+  appetiteRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    justifyContent: 'space-between',
+  },
+  appetiteBtn: {
+    flex: 1,
+    minWidth: '30%',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xs,
+    alignItems: 'center',
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: spacing.xs,
+  },
+  appetiteBtnText: {
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'capitalize',
+    textAlign: 'center',
   },
 });

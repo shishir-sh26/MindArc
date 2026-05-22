@@ -117,5 +117,30 @@ export const educationalModules = [
       "Seeking help is a sign of strength, not weakness.",
       "You don't have to go through this alone."
     ]
+  },
+  {
+    id: "6",
+    title: "Healthy Appetite Recommendations",
+    category: "Nutrition",
+    icon: "restaurant-outline",
+    readTime: "4 min",
+    content: "An average healthy appetite is a natural balance of physical hunger cues that supports a normal lifestyle. Understanding your hunger signals, eating patterns, and emotional cues helps maintain a balanced relationship with food.",
+    sections: [
+      {
+        heading: "What a Normal Appetite Involves",
+        content: "• Regular Eating Patterns: Eating 3 balanced meals (or consistent portions) daily without skipping.\n• Mindful Biofeedback: Eating in response to genuine physiological hunger (like stomach rumbling or mild low energy) rather than emotional triggers like anxiety, boredom, or stress.\n• Stable Energy: Experiencing steady, sustainable energy levels without severe mid-day fatigue or sudden food crashes.\n• Fullness Awareness: Understanding your body's fullness signals and stopping when you feel comfortably satisfied.",
+        tips: ["Listen to physical signs of hunger, not just clock time."]
+      },
+      {
+        heading: "When to Pay Attention",
+        content: "Changes in appetite are often your body's early warning system for stress, anxiety, or physical health changes. Keeping a food and mood log can help identify connections between your emotions and eating habits.",
+        tips: ["If appetite remains persistently low, poor, or excessive for over 2 weeks, it could be a sign of increased stress, hormonal changes, or sleep loss. Consider checking in with a doctor or therapist."]
+      }
+    ],
+    tips: [
+      "Eat mindfully—slowing down allows your brain to register fullness.",
+      "Stay hydrated, as thirst is sometimes mistaken for hunger.",
+      "Maintain regular sleeping patterns, as sleep affects hunger hormones (leptin and ghrelin)."
+    ]
   }
 ];

@@ -5,6 +5,8 @@ import { useTheme } from '../../hooks/useTheme';
 import { useThoughtStore, ThoughtEntry } from '../../store/thoughtStore';
 import { Card } from '../../components/common/Card';
 import { spacing } from '../../../theme/spacing';
+import { typography } from '../../../theme/typography';
+import { rf } from '../../utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
@@ -49,6 +51,9 @@ export default function ThoughtDiaryScreen({ navigation }: Props) {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ForestBackground bgHeightRatio={0.36} showBottomPlants />
+      <View style={styles.header}>
+        <Text style={[styles.title, { color: colors.text }]}>Thought Dairy</Text>
+      </View>
       <FlatList
         data={entries}
         keyExtractor={item => item.id}
@@ -76,6 +81,15 @@ export default function ThoughtDiaryScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  header: {
+    padding: spacing.lg,
+    paddingTop: spacing.xxl,
+  },
+  title: {
+    fontFamily: typography.display,
+    fontSize: rf(32),
+    fontWeight: 'bold',
   },
   listContent: {
     padding: spacing.lg,

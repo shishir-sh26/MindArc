@@ -13,6 +13,7 @@ const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
 // Only real-world photography assets — no AI-phone-mockup risk
 const MORNING_BG = require('../../../assets/images/forest_morning_bg.png');
+const NIGHT_BG = require('../../../assets/images/forest_night_bg.png');
 const LEAVES_LIGHT = require('../../../assets/images/forest_hanging_leaves_light.png');
 const LEAVES_DARK = require('../../../assets/images/forest_hanging_leaves_dark.png');
 const BOTTOM_PLANTS_LIGHT = require('../../../assets/images/forest_bottom_plants.png');
@@ -65,9 +66,9 @@ export const ForestBackground = ({ bgHeightRatio = 0.42, showBottomPlants = true
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
 
-      {/* ── Background: always the real morning forest photo ── */}
+      {/* ── Background: dynamic light/dark mode forest background ── */}
       <Image
-        source={MORNING_BG}
+        source={isDark ? NIGHT_BG : MORNING_BG}
         style={[styles.bgImage, { height: bgH }]}
         resizeMode="cover"
       />
@@ -79,14 +80,14 @@ export const ForestBackground = ({ bgHeightRatio = 0.42, showBottomPlants = true
         ──────────────────────────────────────────────────────── */}
       {isDark && (
         <>
-          {/* Deep black tint — makes the forest fade into black */}
+          {/* Deep black tint — makes the forest fade into black (reduced to show details) */}
           <View
             style={[
               styles.bgImage,
               {
                 height: bgH,
                 backgroundColor: '#000000',
-                opacity: 0.85,
+                opacity: 0.25,
               },
             ]}
           />
@@ -165,7 +166,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     width: SCREEN_W,
-    opacity: 0.96,
+    opacity: 0.45,
   },
   hangingLeavesLeft: {
     position: 'absolute',

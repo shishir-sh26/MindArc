@@ -25,7 +25,7 @@ export default function LearnScreen({ navigation }: Props) {
       <ForestBackground bgHeightRatio={0.38} showBottomPlants />
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>{t('learn.title')}</Text>
-        <Text style={[styles.subtitle, { color: colors.textMuted }]}>{t('learn.subtitle')}</Text>
+        <Text style={[styles.subtitle, { color: colors.text }]}>{t('learn.subtitle')}</Text>
       </View>
       
       <FlatList
@@ -41,9 +41,11 @@ export default function LearnScreen({ navigation }: Props) {
               <Ionicons name={item.icon as any} size={24} color={isDark ? '#000' : colors.accent} />
             </View>
             <View style={styles.textContainer}>
-              <Text style={[styles.moduleTitle, { color: colors.text }]}>{item.title}</Text>
+              <Text style={[styles.moduleTitle, { color: colors.text }]}>
+                {t(`learn.modules.m${item.id}.title`, { defaultValue: item.title })}
+              </Text>
               <Text style={[styles.readTime, { color: colors.textMuted }]}>
-                <Ionicons name="time-outline" size={14} /> {item.readTime}
+                <Ionicons name="time-outline" size={14} /> {t(`learn.modules.m${item.id}.readTime`, { defaultValue: item.readTime })}
               </Text>
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />

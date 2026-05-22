@@ -7,12 +7,17 @@ import { Ionicons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import { useTranslation } from 'react-i18next';
 import { useAudioStore } from '../../store/audioStore';
+import { hp } from '../../utils/responsive';
 
 // Using local audio files added in myapp/assets/images
 const SOUND_OPTIONS = [
   { id: 'rain', name: 'Heavy Rain', icon: 'rainy', file: require('../../../assets/images/heavyrain.mp3') },
   { id: 'forest', name: 'Forest Birds', icon: 'leaf', file: require('../../../assets/images/forestbirds.mp3') },
   { id: 'ocean', name: 'Ocean Waves', icon: 'water', file: require('../../../assets/images/oceanwaves.mp3') },
+  { id: 'stream', name: 'Flowing Stream', icon: 'water-outline', file: require('../../../assets/images/stream-flowing.mp3') },
+  { id: 'thunders', name: 'Thunderstorm', icon: 'flash', file: require('../../../assets/images/thunders.mp3') },
+  { id: 'wind', name: 'Winter Wind', icon: 'cloud', file: require('../../../assets/images/winter-wind.mp3') },
+  { id: 'frogs', name: 'Night Frogs', icon: 'moon', file: require('../../../assets/images/frogs-croaking-at-night.mp3') },
 ];
 
 export default function NatureSoundsScreen() {
@@ -32,7 +37,11 @@ export default function NatureSoundsScreen() {
   return (
     <View style={[styles.outerContainer, { backgroundColor: colors.background }]}>
       <ForestBackground bgHeightRatio={0.40} showBottomPlants />
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <ScrollView 
+        style={styles.container} 
+        contentContainerStyle={[styles.content, activeSoundId ? { paddingBottom: hp(28) } : {}]}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
           <Text style={[styles.title, { color: colors.text }]}>{t('sounds.title')}</Text>
           <Text style={[styles.subtitle, { color: colors.textMuted }]}>
@@ -76,42 +85,42 @@ export default function NatureSoundsScreen() {
             );
           })}
         </View>
+      </ScrollView>
 
-        {/* Media Player Controls */}
-        {activeSoundId && (
-          <View style={[styles.playerContainer, { backgroundColor: colors.surfaceAlt }]}>
-            <Text style={[styles.playerTitle, { color: colors.text }]}>
-              {t('sounds.nowPlaying')} {t(`sounds.options.${activeSoundId}`)}
-            </Text>
+      {/* Media Player Controls (Sticky floating bar at the bottom) */}
+      {activeSoundId && (
+        <View style={[styles.playerContainer, { backgroundColor: colors.surfaceAlt, borderColor: colors.border }]}>
+          <Text style={[styles.playerTitle, { color: colors.text }]}>
+            {t('sounds.nowPlaying')} {t(`sounds.options.${activeSoundId}`)}
+          </Text>
+          
+          <View style={styles.controlsRow}>
+            <View style={styles.buttonGroup}>
+              <TouchableOpacity onPress={togglePlayPause} style={[styles.playBtn, { backgroundColor: colors.accent }]}>
+                <Ionicons name={isPlaying ? "pause" : "play"} size={26} color="#fff" />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={stopAndUnload} style={[styles.playBtn, { backgroundColor: colors.danger }]}>
+                <Ionicons name="stop" size={26} color="#fff" />
+              </TouchableOpacity>
+            </View>
             
-            <View style={styles.controlsRow}>
-              <View style={styles.buttonGroup}>
-                <TouchableOpacity onPress={togglePlayPause} style={[styles.playBtn, { backgroundColor: colors.accent }]}>
-                  <Ionicons name={isPlaying ? "pause" : "play"} size={26} color="#fff" />
-                </TouchableOpacity>
-                <TouchableOpacity onPress={stopAndUnload} style={[styles.playBtn, { backgroundColor: colors.danger }]}>
-                  <Ionicons name="stop" size={26} color="#fff" />
-                </TouchableOpacity>
-              </View>
-              
-              <View style={styles.volumeContainer}>
-                <Ionicons name="volume-low" size={20} color={colors.textMuted} />
-                <Slider
-                  style={styles.slider}
-                  minimumValue={0}
-                  maximumValue={1}
-                  value={volume}
-                  onValueChange={changeVolume}
-                  minimumTrackTintColor={colors.accent}
-                  maximumTrackTintColor={colors.border}
-                  thumbTintColor={colors.accentBlue}
-                />
-                <Ionicons name="volume-high" size={20} color={colors.textMuted} />
-              </View>
+            <View style={styles.volumeContainer}>
+              <Ionicons name="volume-low" size={20} color={colors.textMuted} />
+              <Slider
+                style={styles.slider}
+                minimumValue={0}
+                maximumValue={1}
+                value={volume}
+                onValueChange={changeVolume}
+                minimumTrackTintColor={colors.accent}
+                maximumTrackTintColor={colors.border}
+                thumbTintColor={colors.accentBlue}
+              />
+              <Ionicons name="volume-high" size={20} color={colors.textMuted} />
             </View>
           </View>
-        )}
-      </ScrollView>
+        </View>
+      )}
     </View>
   );
 }
@@ -149,9 +158,18 @@ const styles = StyleSheet.create({
     right: 12,
   },
   playerContainer: {
-    marginTop: spacing.xxl,
-    padding: spacing.xl,
+    position: 'absolute',
+    bottom: hp(11),
+    left: spacing.lg,
+    right: spacing.lg,
+    padding: spacing.md,
     borderRadius: 24,
+    borderWidth: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+    elevation: 8,
   },
   playerTitle: {
     fontSize: 16,

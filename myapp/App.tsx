@@ -10,8 +10,14 @@ import { CormorantGaramond_600SemiBold, CormorantGaramond_500Medium, CormorantGa
 import { Nunito_400Regular, Nunito_500Medium, Nunito_400Regular_Italic } from '@expo-google-fonts/nunito';
 import { DMSans_500Medium } from '@expo-google-fonts/dm-sans';
 import { DMMono_400Regular } from '@expo-google-fonts/dm-mono';
+import { usePedometer } from './src/hooks/usePedometer';
 
 LogBox.ignoreLogs(['expo-notifications: Android Push notifications']);
+
+function AppInitializer() {
+  usePedometer();
+  return null;
+}
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -37,6 +43,7 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <ThemeProvider>
+        <AppInitializer />
         <StatusBar style="auto" />
         <RootNavigator />
       </ThemeProvider>

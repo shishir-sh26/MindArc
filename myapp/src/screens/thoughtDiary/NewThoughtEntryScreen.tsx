@@ -3,10 +3,12 @@ import { View, Text, StyleSheet, ScrollView, TextInput, KeyboardAvoidingView, Pl
 import { useTranslation } from 'react-i18next';
 import { ForestBackground } from '../../components/common/ForestBackground';
 import { db, auth } from '../../utils/firebase';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, doc, setDoc } from 'firebase/firestore';
 import { Alert } from 'react-native';
 import { useTheme } from '../../hooks/useTheme';
 import { useThoughtStore } from '../../store/thoughtStore';
+import { useMoodStore } from '../../store/moodStore';
+import { updateUserStreak, isYesterday } from '../../utils/streakService';
 import { Button } from '../../components/common/Button';
 import { spacing } from '../../../theme/spacing';
 import Slider from '@react-native-community/slider';
@@ -28,9 +30,10 @@ export default function NewThoughtEntryScreen({ navigation }: Props) {
   const [evidenceAgainst, setEvidenceAgainst] = useState('');
   const [balancedThought, setBalancedThought] = useState('');
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!situation || !automaticThought || !emotion) return; // Simple validation
 
+    const today = new Date().toISOString().split('T')[0];
     const payload = {
       situation,
       automaticThought,
@@ -42,22 +45,69 @@ export default function NewThoughtEntryScreen({ navigation }: Props) {
       created_at: new Date().toISOString()
     };
 
+    const user = auth.currentUser;
+    if (!user) {
+      Alert.alert("Error", "You must be logged in to save entries.");
+      return;
+    }
+
+    // Generate Firestore document ID synchronously
+    const docId = doc(collection(db, 'users', user.uid, 'thought_logs')).id;
+
+    // 1. Optimistic Zustand Store update (instant local change!)
+    addEntry({
+      id: docId,
+      ...payload
+    });
+
+    // 2. Optimistic Streak calculation
     try {
-      const user = auth.currentUser;
-      if (user) {
-        await addDoc(collection(db, 'thought_logs'), {
+      const store = useMoodStore.getState();
+      const currentStreak = store.streak;
+      let lastPostDate = '';
+      
+      const uniqueDates = Array.from(new Set(store.entries.map(e => e.date))).sort((a, b) => b.localeCompare(a));
+      const datesWithoutToday = uniqueDates.filter(d => d !== today);
+      if (datesWithoutToday.length > 0) {
+        lastPostDate = datesWithoutToday[0];
+      }
+
+      let newStreak = currentStreak;
+      if (lastPostDate === '') {
+        newStreak = 1;
+      } else if (isYesterday(lastPostDate, today)) {
+        newStreak = currentStreak + 1;
+      } else if (lastPostDate !== today) {
+        newStreak = 1;
+      }
+
+      store.setStreak(newStreak);
+      store.setStreakBroken(false);
+    } catch (streakErr) {
+      console.warn("[NewThoughtEntryScreen] Failed to calculate optimistic streak:", streakErr);
+    }
+
+    // 3. Instant Navigation Back Transition (0ms UI lag)
+    navigation.goBack();
+
+    // 4. Background asynchronous Firebase persistence (non-blocking)
+    (async () => {
+      try {
+        await setDoc(doc(db, 'users', user.uid, 'thought_logs', docId), {
           ...payload,
           user_id: user.uid
         });
-      } else {
-        throw new Error("You must be logged in to save entries.");
-      }
+        console.log("[NewThoughtEntryScreen] Background: Saved thought log in Firestore:", docId);
 
-      addEntry(payload);
-      navigation.goBack();
-    } catch (err: any) {
-      Alert.alert("Error", "Could not save entry: " + err.message);
-    }
+        // Update daily streak remotely
+        await updateUserStreak(user.uid, today, 'thought', {
+          situation: situation,
+          intensity: intensity
+        });
+      } catch (err: any) {
+        console.warn('[NewThoughtEntryScreen] Background thought save warning (offline/network issue):', err);
+      }
+    })();
   };
 
   const inputStyle = [

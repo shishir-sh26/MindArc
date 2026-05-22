@@ -10,6 +10,7 @@ import Animated, { useSharedValue, useAnimatedStyle, useAnimatedProps, withTimin
 import Svg, { Rect, Circle, Path, G } from 'react-native-svg';
 import * as HapticsAPI from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 const AnimatedView = Animated.createAnimatedComponent(View);
@@ -19,17 +20,18 @@ type ModuleDetailRouteProp = RouteProp<RootStackParamList, 'ModuleDetail'>;
 // Simulations
 const AnxietyMeter = ({ onLevelChange }: { onLevelChange: (level: 'low' | 'mid' | 'high') => void }) => {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const stressVal = useSharedValue(0);
-  const [desc, setDesc] = useState("Calm and relaxed. Heart rate is steady.");
+  const [level, setLevel] = useState<'low' | 'mid' | 'high'>('low');
   
-  const handleTap = (level: number, label: 'low' | 'mid' | 'high') => {
+  const handleTap = (val: number, label: 'low' | 'mid' | 'high') => {
     HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Light);
-    stressVal.value = withSpring(level, { damping: 15 });
+    stressVal.value = withSpring(val, { damping: 15 });
     onLevelChange(label);
     
-    if (level < 40) setDesc("Calm and relaxed. Heart rate is steady, breathing is deep.");
-    else if (level < 75) setDesc("Alert and focused. Mild tension, slightly elevated heart rate.");
-    else setDesc("High stress. Rapid breathing, muscle tension, fight-or-flight activated.");
+    if (val < 40) setLevel('low');
+    else if (val < 75) setLevel('mid');
+    else setLevel('high');
   };
 
   const maxHeight = hp(20);
@@ -43,17 +45,23 @@ const AnxietyMeter = ({ onLevelChange }: { onLevelChange: (level: 'low' | 'mid' 
     return { height, backgroundColor: color };
   });
 
+  const desc = level === 'low' 
+    ? t('learn.sim.anxietyLowDesc', { defaultValue: "Calm and relaxed. Heart rate is steady, breathing is deep." }) 
+    : level === 'mid' 
+      ? t('learn.sim.anxietyMidDesc', { defaultValue: "Alert and focused. Mild tension, slightly elevated heart rate." }) 
+      : t('learn.sim.anxietyHighDesc', { defaultValue: "High stress. Rapid breathing, muscle tension, fight-or-flight activated." });
+
   return (
-    <View style={simStyles.container}>
-      <Text style={[simStyles.title, { color: colors.text }]}>Interactive Stress Meter</Text>
+    <View style={[simStyles.container, { backgroundColor: colors.surface, borderColor: colors.border, shadowColor: colors.accentDeep }]}>
+      <Text style={[simStyles.title, { color: colors.text }]}>{t('learn.sim.anxietyTitle', { defaultValue: "Interactive Stress Meter" })}</Text>
       <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: hp(20), marginVertical: hp(2), width: '100%', backgroundColor: colors.surfaceAlt, borderRadius: 12, overflow: 'hidden' }}>
         <Animated.View style={[{ width: '100%', position: 'absolute', bottom: 0 }, barStyle]} />
       </View>
       <Text style={[simStyles.desc, { color: colors.textMuted }]}>{desc}</Text>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: hp(2) }}>
-        <TouchableOpacity style={simStyles.btn} onPress={() => handleTap(20, 'low')}><Text style={{fontFamily: typography.label}}>LOW</Text></TouchableOpacity>
-        <TouchableOpacity style={simStyles.btn} onPress={() => handleTap(50, 'mid')}><Text style={{fontFamily: typography.label}}>MED</Text></TouchableOpacity>
-        <TouchableOpacity style={simStyles.btn} onPress={() => handleTap(90, 'high')}><Text style={{fontFamily: typography.label}}>HIGH</Text></TouchableOpacity>
+        <TouchableOpacity style={simStyles.btn} onPress={() => handleTap(20, 'low')}><Text style={{fontFamily: typography.label, color: colors.text}}>{t('learn.sim.low', { defaultValue: "LOW" })}</Text></TouchableOpacity>
+        <TouchableOpacity style={simStyles.btn} onPress={() => handleTap(50, 'mid')}><Text style={{fontFamily: typography.label, color: colors.text}}>{t('learn.sim.med', { defaultValue: "MED" })}</Text></TouchableOpacity>
+        <TouchableOpacity style={simStyles.btn} onPress={() => handleTap(90, 'high')}><Text style={{fontFamily: typography.label, color: colors.text}}>{t('learn.sim.high', { defaultValue: "HIGH" })}</Text></TouchableOpacity>
       </View>
     </View>
   );
@@ -61,6 +69,7 @@ const AnxietyMeter = ({ onLevelChange }: { onLevelChange: (level: 'low' | 'mid' 
 
 const FlipCard = ({ myth, fact }: { myth: string, fact: string }) => {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const [flipped, setFlipped] = useState(false);
   const flipAnim = useSharedValue(0);
 
@@ -86,11 +95,11 @@ const FlipCard = ({ myth, fact }: { myth: string, fact: string }) => {
     <TouchableOpacity onPress={handleFlip} activeOpacity={1}>
       <View style={{ width: wp(80), height: hp(20), marginBottom: hp(2) }}>
         <Animated.View style={[simStyles.cardFace, { backgroundColor: colors.surfaceAlt, borderColor: colors.border }, frontStyle]}>
-          <Text style={[simStyles.badge, { color: colors.danger }]}>MYTH</Text>
+          <Text style={[simStyles.badge, { color: colors.danger }]}>{t('learn.sim.mythLabel', { defaultValue: "MYTH" })}</Text>
           <Text style={[simStyles.cardText, { color: colors.text }]}>{myth}</Text>
         </Animated.View>
         <Animated.View style={[simStyles.cardFace, simStyles.cardBack, { backgroundColor: colors.calmLight, borderColor: colors.calm }, backStyle]}>
-          <Text style={[simStyles.badge, { color: colors.calm }]}>FACT</Text>
+          <Text style={[simStyles.badge, { color: colors.calm }]}>{t('learn.sim.factLabel', { defaultValue: "FACT" })}</Text>
           <Text style={[simStyles.cardText, { color: colors.text }]}>{fact}</Text>
         </Animated.View>
       </View>
@@ -100,23 +109,23 @@ const FlipCard = ({ myth, fact }: { myth: string, fact: string }) => {
 
 const TriggerRipple = () => {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const [active, setActive] = useState<string | null>(null);
 
   const ripples = [
-    { id: 'mind', label: 'MIND', desc: 'Cognitive Overload: Your thoughts move faster than you can process. Focus shatters, and self-doubt begins to cloud your decision-making.', color: colors.reflect },
-    { id: 'body', label: 'BODY', desc: 'Somatic Response: High Cortisol leads to physical "Armor"—your muscles clench, your breath becomes shallow, and you may feel constant fatigue.', color: colors.danger },
-    { id: 'life', label: 'LIFE', desc: 'Social Erosion: The cumulative weight leads to withdrawal. You may find yourself avoiding joys and distancing from those who support you most.', color: colors.learn },
+    { id: 'mind', label: t('learn.sim.rippleMindLabel', { defaultValue: 'MIND' }), desc: t('learn.sim.rippleMindDesc', { defaultValue: 'Cognitive Overload: Your thoughts move faster than you can process. Focus shatters, and self-doubt begins to cloud your decision-making.' }), color: colors.reflect },
+    { id: 'body', label: t('learn.sim.rippleBodyLabel', { defaultValue: 'BODY' }), desc: t('learn.sim.rippleBodyDesc', { defaultValue: 'Somatic Response: High Cortisol leads to physical "Armor"—your muscles clench, your breath becomes shallow, and you may feel constant fatigue.' }), color: colors.danger },
+    { id: 'life', label: t('learn.sim.rippleLifeLabel', { defaultValue: 'LIFE' }), desc: t('learn.sim.rippleLifeDesc', { defaultValue: 'Social Erosion: The cumulative weight leads to withdrawal. You may find yourself avoiding joys and distancing from those who support you most.' }), color: colors.learn },
   ];
 
   const handleTriggerPress = () => {
     HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Heavy);
-    // Reset or show a generic pulse
     setActive(null);
   };
 
   return (
-    <View style={simStyles.container}>
-      <Text style={[simStyles.title, { color: colors.text, marginBottom: hp(2) }]}>The Ripple Effect</Text>
+    <View style={[simStyles.container, { backgroundColor: colors.surface, borderColor: colors.border, shadowColor: colors.accentDeep }]}>
+      <Text style={[simStyles.title, { color: colors.text, marginBottom: hp(2) }]}>{t('learn.sim.rippleTitle', { defaultValue: "The Ripple Effect" })}</Text>
       
       <View style={{ height: hp(25), justifyContent: 'center', alignItems: 'center' }}>
         <Svg width="250" height="250" viewBox="0 0 100 100">
@@ -146,11 +155,10 @@ const TriggerRipple = () => {
             onPress={handleTriggerPress}
             style={{ position: 'absolute', backgroundColor: colors.accent, paddingHorizontal: 12, paddingVertical: 4, borderRadius: 20 }}
         >
-            <Text style={{ fontFamily: typography.label, fontSize: rf(12), color: 'white', fontWeight: 'bold' }}>TRIGGER</Text>
+            <Text style={{ fontFamily: typography.label, fontSize: rf(12), color: 'white', fontWeight: 'bold' }}>{t('learn.sim.rippleTrigger', { defaultValue: "TRIGGER" })}</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Explicit Selection Buttons for better accessibility */}
       <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 10, marginTop: hp(4), marginBottom: hp(2) }}>
         {ripples.map(r => (
             <TouchableOpacity 
@@ -175,7 +183,7 @@ const TriggerRipple = () => {
       {active && (
         <Animated.View entering={FadeInDown} style={{ marginTop: hp(1), padding: hp(2), backgroundColor: colors.surfaceAlt, borderRadius: 12, borderWidth: 1, borderColor: colors.borderLight }}>
           <Text style={{ fontFamily: typography.label, color: ripples.find(r => r.id === active)?.color, marginBottom: 4 }}>
-            {active.toUpperCase()} IMPACT:
+            {t(`learn.sim.ripple${active.charAt(0).toUpperCase() + active.slice(1)}Label`, { defaultValue: active.toUpperCase() })} IMPACT:
           </Text>
           <Text style={{ fontFamily: typography.body, color: colors.text }}>
             {ripples.find(r => r.id === active)?.desc}
@@ -240,6 +248,7 @@ const RippleRing = ({ index, color, isActive, onPress }: { index: number, color:
 
 const MythChecker = () => {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const [myth, setMyth] = useState("");
   const [result, setResult] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -270,10 +279,10 @@ const MythChecker = () => {
   };
 
   return (
-    <View style={simStyles.container}>
-      <Text style={[simStyles.title, { color: colors.text, marginBottom: hp(1) }]}>AI Myth Buster</Text>
+    <View style={[simStyles.container, { backgroundColor: colors.surface, borderColor: colors.border, shadowColor: colors.accentDeep }]}>
+      <Text style={[simStyles.title, { color: colors.text, marginBottom: hp(1) }]}>{t('learn.sim.mythTitle', { defaultValue: "AI Myth Buster" })}</Text>
       <Text style={[simStyles.desc, { color: colors.textMuted, marginBottom: hp(2) }]}>
-        {"Enter a common myth or a thought you're unsure about, and our AI will clarify the medical fact."}
+        {t('learn.sim.mythDesc', { defaultValue: "Enter a common myth or a thought you're unsure about, and our AI will clarify the medical fact." })}
       </Text>
 
       <TextInput
@@ -288,7 +297,7 @@ const MythChecker = () => {
           borderWidth: 1,
           borderColor: colors.borderLight
         }}
-        placeholder="Example: Anxiety is just a sign of weakness..."
+        placeholder={t('learn.sim.mythPlaceholder', { defaultValue: "Example: Anxiety is just a sign of weakness..." })}
         placeholderTextColor={colors.textMuted}
         multiline
         value={myth}
@@ -310,7 +319,7 @@ const MythChecker = () => {
         {loading ? (
           <ActivityIndicator color="white" />
         ) : (
-          <Text style={{ color: 'white', fontFamily: typography.label, fontWeight: 'bold' }}>VERIFY WITH AI</Text>
+          <Text style={{ color: 'white', fontFamily: typography.label, fontWeight: 'bold' }}>{t('learn.sim.mythVerifyBtn', { defaultValue: "VERIFY WITH AI" })}</Text>
         )}
       </TouchableOpacity>
 
@@ -337,13 +346,14 @@ const MythChecker = () => {
 
 const SupportContacts = () => {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   
   const contacts = [
-    { name: "Emergency Services", phone: "911", icon: "alert-circle", color: "#FF4444" },
-    { name: "National Suicide Prevention", phone: "988", icon: "heart", color: "#FF8800" },
-    { name: "Dr. Aris (Psychiatrist)", phone: "+15550123", icon: "person", color: colors.accent },
-    { name: "Dr. Sarah (Therapist)", phone: "+15550456", icon: "chatbubbles", color: colors.reflect },
-    { name: "Crisis Text Line", phone: "741741", icon: "phone-portrait", color: "#44BBFF" }
+    { name: t('learn.sim.contactEmergency', { defaultValue: "Emergency Services" }), phone: "911", icon: "alert-circle", color: "#FF4444" },
+    { name: t('learn.sim.contactSuicide', { defaultValue: "National Suicide Prevention" }), phone: "988", icon: "heart", color: "#FF8800" },
+    { name: t('learn.sim.contactPsychiatrist', { defaultValue: "Dr. Aris (Psychiatrist)" }), phone: "+15550123", icon: "person", color: colors.accent },
+    { name: t('learn.sim.contactTherapist', { defaultValue: "Dr. Sarah (Therapist)" }), phone: "+15550456", icon: "chatbubbles", color: colors.reflect },
+    { name: t('learn.sim.contactTextLine', { defaultValue: "Crisis Text Line" }), phone: "741741", icon: "phone-portrait", color: "#44BBFF" }
   ];
 
   const handleCall = (number: string) => {
@@ -352,8 +362,8 @@ const SupportContacts = () => {
   };
 
   return (
-    <View style={simStyles.container}>
-      <Text style={[simStyles.title, { color: colors.text, marginBottom: hp(2) }]}>Professional Contacts</Text>
+    <View style={[simStyles.container, { backgroundColor: colors.surface, borderColor: colors.border, shadowColor: colors.accentDeep }]}>
+      <Text style={[simStyles.title, { color: colors.text, marginBottom: hp(2) }]}>{t('learn.sim.contactsTitle', { defaultValue: "Professional Contacts" })}</Text>
       {contacts.map((contact, index) => (
         <TouchableOpacity 
           key={index}
@@ -385,6 +395,7 @@ const SupportContacts = () => {
 
 const LifestyleAssessment = () => {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const [step, setStep] = useState(1);
   const [responses, setResponses] = useState({ sleep: '', exercise: '', diet: '', caffeine: '' });
   const [plan, setPlan] = useState<string | null>(null);
@@ -411,31 +422,38 @@ const LifestyleAssessment = () => {
 
   const renderQuestion = (id: keyof typeof responses, label: string, options: string[]) => (
     <View style={{ marginBottom: hp(3) }}>
-      <Text style={{ fontFamily: typography.label, color: colors.text, marginBottom: hp(1) }}>{label}</Text>
+      <Text style={{ fontFamily: typography.label, color: colors.text, marginBottom: hp(1) }}>
+        {t(`learn.sim.quest_${id}`, { defaultValue: label })}
+      </Text>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-        {options.map(opt => (
-          <TouchableOpacity 
-            key={opt}
-            onPress={() => { HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Light); setResponses({ ...responses, [id]: opt }); }}
-            style={{
-              paddingHorizontal: 12,
-              paddingVertical: 8,
-              borderRadius: 12,
-              backgroundColor: responses[id] === opt ? colors.accent : colors.surfaceAlt,
-              borderWidth: 1,
-              borderColor: responses[id] === opt ? colors.accent : colors.borderLight
-            }}
-          >
-            <Text style={{ fontFamily: typography.body, color: responses[id] === opt ? 'white' : colors.text, fontSize: rf(13) }}>{opt}</Text>
-          </TouchableOpacity>
-        ))}
+        {options.map(opt => {
+          const optKey = opt.replace(/[<>\s+]+/g, '_').toLowerCase();
+          return (
+            <TouchableOpacity 
+              key={opt}
+              onPress={() => { HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Light); setResponses({ ...responses, [id]: opt }); }}
+              style={{
+                paddingHorizontal: 12,
+                paddingVertical: 8,
+                borderRadius: 12,
+                backgroundColor: responses[id] === opt ? colors.accent : colors.surfaceAlt,
+                borderWidth: 1,
+                borderColor: responses[id] === opt ? colors.accent : colors.borderLight
+              }}
+            >
+              <Text style={{ fontFamily: typography.body, color: responses[id] === opt ? 'white' : colors.text, fontSize: rf(13) }}>
+                {t(`learn.sim.opt_${optKey}`, { defaultValue: opt })}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
     </View>
   );
 
   return (
-    <View style={simStyles.container}>
-      <Text style={[simStyles.title, { color: colors.text, marginBottom: hp(2) }]}>Wellness Assessment</Text>
+    <View style={[simStyles.container, { backgroundColor: colors.surface, borderColor: colors.border, shadowColor: colors.accentDeep }]}>
+      <Text style={[simStyles.title, { color: colors.text, marginBottom: hp(2) }]}>{t('learn.sim.wellnessTitle', { defaultValue: "Wellness Assessment" })}</Text>
       
       {!plan ? (
         <>
@@ -456,7 +474,7 @@ const LifestyleAssessment = () => {
               opacity: (loading || !responses.sleep || !responses.exercise) ? 0.6 : 1
             }}
           >
-            {loading ? <ActivityIndicator color="white" /> : <Text style={{ color: 'white', fontFamily: typography.label, fontWeight: 'bold' }}>GENERATE BETTER LIVING SUMMARY</Text>}
+            {loading ? <ActivityIndicator color="white" /> : <Text style={{ color: 'white', fontFamily: typography.label, fontWeight: 'bold' }}>{t('learn.sim.generateSummaryBtn', { defaultValue: "GENERATE BETTER LIVING SUMMARY" })}</Text>}
           </TouchableOpacity>
         </>
       ) : (
@@ -469,7 +487,7 @@ const LifestyleAssessment = () => {
             onPress={() => { setPlan(null); setResponses({ sleep: '', exercise: '', diet: '', caffeine: '' }); }}
             style={{ marginTop: hp(3), alignSelf: 'center' }}
           >
-            <Text style={{ color: colors.accent, fontFamily: typography.label }}>RETAKE ASSESSMENT</Text>
+            <Text style={{ color: colors.accent, fontFamily: typography.label }}>{t('learn.sim.retakeBtn', { defaultValue: "RETAKE ASSESSMENT" })}</Text>
           </TouchableOpacity>
         </Animated.View>
       )}
@@ -479,31 +497,32 @@ const LifestyleAssessment = () => {
 
 const RelievingGames = () => {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   
   return (
     <View style={{ marginTop: hp(6), paddingBottom: hp(4) }}>
-      <Text style={[styles.tipsTitle, { color: colors.text }]}>🕹️ Relieving Games</Text>
+      <Text style={[styles.tipsTitle, { color: colors.text }]}>{t('learn.sim.gamesTitle', { defaultValue: "🕹️ Relieving Games" })}</Text>
       <Text style={[styles.metaText, { color: colors.textMuted, marginBottom: hp(2) }]}>
-        Interactive activities to help ground you in the present moment.
+        {t('learn.sim.gamesSubtitle', { defaultValue: "Interactive activities to help ground you in the present moment." })}
       </Text>
       
       {/* 1. Breathing Box Game */}
-      <View style={[simStyles.container, { marginBottom: hp(3) }]}>
-        <Text style={[simStyles.title, { color: colors.text, marginBottom: hp(1) }]}>Breathing Box</Text>
+      <View style={[simStyles.container, { marginBottom: hp(3), backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <Text style={[simStyles.title, { color: colors.text, marginBottom: hp(1) }]}>{t('learn.sim.breathingBoxTitle', { defaultValue: "Breathing Box" })}</Text>
         <View style={{ alignItems: 'center', justifyContent: 'center', height: hp(15) }}>
           <AnimatedBreathingBox />
         </View>
         <Text style={[simStyles.desc, { color: colors.textMuted, marginTop: hp(1) }]}>
-          Follow the box to regulate your heart rate.
+          {t('learn.sim.breathingBoxDesc', { defaultValue: "Follow the box to regulate your heart rate." })}
         </Text>
       </View>
 
       {/* 2. Pop the Stress Bubbles */}
-      <View style={[simStyles.container, { marginBottom: hp(3) }]}>
-        <Text style={[simStyles.title, { color: colors.text, marginBottom: hp(1) }]}>Pop the Stress</Text>
+      <View style={[simStyles.container, { marginBottom: hp(3), backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <Text style={[simStyles.title, { color: colors.text, marginBottom: hp(1) }]}>{t('learn.sim.popStressTitle', { defaultValue: "Pop the Stress" })}</Text>
         <StressBubbles />
         <Text style={[simStyles.desc, { color: colors.textMuted, marginTop: hp(1) }]}>
-          Tap the bubbles to release tension.
+          {t('learn.sim.popStressDesc', { defaultValue: "Tap the bubbles to release tension." })}
         </Text>
       </View>
     </View>
@@ -512,6 +531,7 @@ const RelievingGames = () => {
 
 const AnimatedBreathingBox = () => {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const scale = useSharedValue(1);
   const opacity = useSharedValue(0.6);
   const rotation = useSharedValue(0);
@@ -616,7 +636,7 @@ const AnimatedBreathingBox = () => {
             fontWeight: 'bold',
             transform: [{ rotate: phase === 'Inhale' ? '-45deg' : '0deg' }] // Keep text upright
         }}>
-          {phase.toUpperCase()}
+          {t('learn.sim.' + phase.toLowerCase(), { defaultValue: phase }).toUpperCase()}
         </Text>
       </Animated.View>
     </View>
@@ -662,41 +682,76 @@ export default function ModuleDetailScreen() {
   const navigation = useNavigation();
   const { module } = route.params;
   const [stressLevel, setStressLevel] = useState<'low' | 'mid' | 'high' | null>(null);
+  const { t } = useTranslation();
 
   const levelSpecificTips = {
     low: [
-      "Maintenance is key: keep up with your daily mindfulness to stay balanced.",
-      "This is a great time for a light walk or reading to reinforce calm.",
-      "Acknowledge and appreciate your current state of mental clarity."
+      t('learn.levelTips.low.0', { defaultValue: "Maintenance is key: keep up with your daily mindfulness to stay balanced." }),
+      t('learn.levelTips.low.1', { defaultValue: "This is a great time for a light walk or reading to reinforce calm." }),
+      t('learn.levelTips.low.2', { defaultValue: "Acknowledge and appreciate your current state of mental clarity." })
     ],
     mid: [
-      "Notice where you're holding tension—usually shoulders, jaw, or neck.",
-      "A 5-minute 'reset' break can prevent your stress from escalating further.",
-      "Take small sips of water and practice one round of box breathing."
+      t('learn.levelTips.mid.0', { defaultValue: "Notice where you're holding tension—usually shoulders, jaw, or neck." }),
+      t('learn.levelTips.mid.1', { defaultValue: "A 5-minute 'reset' break can prevent your stress from escalating further." }),
+      t('learn.levelTips.mid.2', { defaultValue: "Take small sips of water and practice one round of box breathing." })
     ],
     high: [
-      "PRIORITY: Stop what you are doing immediately and follow the Breathing Box below.",
-      "Splash cold water on your face—this helps trigger your body's natural relaxation reflex.",
-      "Immediate Grounding: Name 5 things you can see and 4 things you can touch right now."
+      t('learn.levelTips.high.0', { defaultValue: "PRIORITY: Stop what you are doing immediately and follow the Breathing Box below." }),
+      t('learn.levelTips.high.1', { defaultValue: "Splash cold water on your face—this helps trigger your body's natural relaxation reflex." }),
+      t('learn.levelTips.high.2', { defaultValue: "Immediate Grounding: Name 5 things you can see and 4 things you can touch right now." })
     ]
   };
 
-  const currentTips = (module.title.toLowerCase().includes('what is anxiety') && stressLevel) 
+  const isAnxietyModule = module.title.toLowerCase().includes('what is anxiety');
+
+  const currentTips = (isAnxietyModule && stressLevel) 
     ? levelSpecificTips[stressLevel] 
     : module.tips;
 
+  const translatedTitle = t(`learn.modules.m${module.id}.title`, { defaultValue: module.title });
+  const translatedCategory = t(`learn.modules.m${module.id}.category`, { defaultValue: module.category });
+  const translatedReadTime = t(`learn.modules.m${module.id}.readTime`, { defaultValue: module.readTime });
+  const translatedContent = t(`learn.modules.m${module.id}.content`, { defaultValue: module.content });
+
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
-      <Text style={[styles.title, { color: colors.text }]}>{module.title}</Text>
+      <Text style={[styles.title, { color: colors.text }]}>{translatedTitle}</Text>
       
       <View style={[styles.meta, { backgroundColor: colors.surfaceAlt, borderColor: colors.borderLight }]}>
-        <Text style={[styles.metaText, { color: colors.accentDeep }]}>{module.category.toUpperCase()}</Text>
-        <Text style={[styles.metaText, { color: colors.textMuted }]}>{module.readTime} read</Text>
+        <Text style={[styles.metaText, { color: colors.accentDeep }]}>{translatedCategory.toUpperCase()}</Text>
+        <Text style={[styles.metaText, { color: colors.textMuted }]}>
+          {t('learn.readLabel', { defaultValue: '{{time}} read', time: translatedReadTime })}
+        </Text>
       </View>
 
       <Text style={[styles.contentBody, { color: colors.text }]}>
-        {module.content}
+        {translatedContent}
       </Text>
+
+      {/* Dynamic sections rendering */}
+      {module.sections && module.sections.map((sec: any, sIdx: number) => {
+        const translatedSecHeading = t(`learn.modules.m${module.id}.sections.s${sIdx}.heading`, { defaultValue: sec.heading });
+        const translatedSecContent = t(`learn.modules.m${module.id}.sections.s${sIdx}.content`, { defaultValue: sec.content });
+        return (
+          <View key={sIdx} style={{ marginTop: hp(3) }}>
+            <Text style={{ fontFamily: typography.display, fontSize: rf(20), fontWeight: '600', color: colors.text, marginBottom: hp(1) }}>
+              {translatedSecHeading}
+            </Text>
+            <Text style={[styles.contentBody, { color: colors.text, lineHeight: rf(24) }]}>
+              {translatedSecContent}
+            </Text>
+            {sec.tips && sec.tips.map((tip: string, tIdx: number) => {
+              const translatedSecTip = t(`learn.modules.m${module.id}.sections.s${sIdx}.tips.${tIdx}`, { defaultValue: tip });
+              return (
+                <View key={tIdx} style={[styles.tipCard, { backgroundColor: colors.surfaceAlt, marginTop: hp(1.5), marginBottom: 0, shadowOpacity: 0, borderWidth: 1, borderColor: colors.borderLight }]}>
+                  <Ionicons name="bulb-outline" size={16} color={colors.accent} style={{ marginRight: spacing.sm, marginTop: 2 }} />
+                  <Text style={[styles.tipText, { color: colors.text, fontSize: rf(14) }]}>{translatedSecTip}</Text>
+                </View>
+              );
+            })}
+          </View>
+        );
+      })}
 
       {/* Inject Simulations based on title */}
       {module.title.toLowerCase().includes('what is anxiety') && (
@@ -713,22 +768,33 @@ export default function ModuleDetailScreen() {
       
       {module.title.toLowerCase().includes('myth') && !module.title.toLowerCase().includes('vs fact') && (
         <View style={{ marginTop: hp(4), alignItems: 'center' }}>
-          <FlipCard myth="Anxiety is just weakness." fact="Anxiety is a common medical condition related to brain chemistry and environmental stress." />
-          <FlipCard myth="You should just force yourself to calm down." fact="Forcing calm often increases stress. Acceptance and breathing techniques work better." />
+          <FlipCard 
+            myth={t('learn.sim.myth1', { defaultValue: "Anxiety is just weakness." })} 
+            fact={t('learn.sim.fact1', { defaultValue: "Anxiety is a common medical condition related to brain chemistry and environmental stress." })} 
+          />
+          <FlipCard 
+            myth={t('learn.sim.myth2', { defaultValue: "You should just force yourself to calm down." })} 
+            fact={t('learn.sim.fact2', { defaultValue: "Forcing calm often increases stress. Acceptance and breathing techniques work better." })} 
+          />
         </View>
       )}
 
       {currentTips && currentTips.length > 0 && (
         <View style={{ marginTop: hp(4) }}>
           <Text style={[styles.tipsTitle, { color: colors.text }]}>
-            {stressLevel ? `Action Items: ${stressLevel.toUpperCase()}` : 'Key Takeaways'}
+            {stressLevel ? `${t('learn.actionItems', { defaultValue: 'Action Items' })}: ${t('learn.sim.' + stressLevel, { defaultValue: stressLevel }).toUpperCase()}` : t('learn.keyTakeaways', { defaultValue: 'Key Takeaways' })}
           </Text>
-          {currentTips.map((tip: string, idx: number) => (
-            <View key={idx} style={[styles.tipCard, { backgroundColor: colors.surface }]}>
-              <Text style={{ color: colors.accent, marginRight: spacing.sm }}>•</Text>
-              <Text style={[styles.tipText, { color: colors.text }]}>{tip}</Text>
-            </View>
-          ))}
+          {currentTips.map((tip: string, idx: number) => {
+            const translatedTip = (isAnxietyModule && stressLevel)
+              ? tip
+              : t(`learn.modules.m${module.id}.tips.${idx}`, { defaultValue: tip });
+            return (
+              <View key={idx} style={[styles.tipCard, { backgroundColor: colors.surface }]}>
+                <Text style={{ color: colors.accent, marginRight: spacing.sm }}>•</Text>
+                <Text style={[styles.tipText, { color: colors.text }]}>{translatedTip}</Text>
+              </View>
+            );
+          })}
         </View>
       )}
 
@@ -793,9 +859,6 @@ const simStyles = StyleSheet.create({
     padding: hp(3),
     borderRadius: 24,
     borderWidth: 1,
-    borderColor: '#E8DDD3',
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#C4A882',
     shadowOpacity: 0.1,
     shadowRadius: 10,
     elevation: 2,

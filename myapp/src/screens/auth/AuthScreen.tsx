@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
-import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+import React, { useState } from 'react';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../../utils/firebase';
 import { useTheme } from '../../hooks/useTheme';
 import { spacing, radii } from '../../../theme/spacing';
@@ -9,15 +8,7 @@ import { typography } from '../../../theme/typography';
 import { wp, hp, rf } from '../../utils/responsive';
 import { ForestBackground } from '../../components/common/ForestBackground';
 import { Button } from '../../components/common/Button';
-import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-
-// Configure Google Sign-In with Web Client ID
-// (User can configure EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID in their .env)
-GoogleSignin.configure({
-  webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || '178725930459-v2vcuioi5k8orq191urpnn3g0drj55ir.apps.googleusercontent.com',
-  offlineAccess: true,
-});
 
 export default function AuthScreen() {
   const { t } = useTranslation();
@@ -48,37 +39,6 @@ export default function AuthScreen() {
          msg = "This email is already in use.";
       }
       Alert.alert('Authentication Failed', msg);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGoogleSignIn = async () => {
-    setLoading(true);
-    try {
-      await GoogleSignin.hasPlayServices();
-      const response = await GoogleSignin.signIn();
-      
-      const idToken = response.data?.idToken;
-      if (!idToken) {
-        throw new Error("Google Sign-In did not return an ID Token. Make sure your SHA-1 fingerprint is registered in the Firebase console and you are using the correct Web Client ID.");
-      }
-
-      const credential = GoogleAuthProvider.credential(idToken);
-      await signInWithCredential(auth, credential);
-    } catch (error: any) {
-      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-        console.log("Google Sign-In cancelled by user");
-      } else if (error.code === statusCodes.IN_PROGRESS) {
-        Alert.alert("Google Sign-In", "Sign-in is already in progress.");
-      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        Alert.alert("Google Sign-In", "Google Play Services are not available or outdated.");
-      } else {
-        Alert.alert(
-          "Google Sign-In Setup Guide",
-          "Google Sign-In is now fully configured in the code!\n\nTo make it work in your custom APK, remember to:\n1. Download 'google-services.json' from your Firebase Console.\n2. Place it in your project's 'myapp' folder.\n3. Add your Keystore's SHA-1 fingerprint to the Firebase Android App settings.\n\nError details: " + error.message
-        );
-      }
     } finally {
       setLoading(false);
     }
@@ -130,26 +90,7 @@ export default function AuthScreen() {
             style={{ marginTop: spacing.md }}
           />
  
-          <View style={styles.dividerContainer}>
-            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-            <Text style={[styles.dividerText, { color: colors.textMuted }]}>{t('auth.or')}</Text>
-            <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
-          </View>
- 
-          <TouchableOpacity 
-            style={[styles.googleButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : '#ffffff', borderColor: colors.border }]}
-            onPress={handleGoogleSignIn}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color={isDark ? '#fff' : '#444'} style={{ marginRight: 10 }} />
-            ) : (
-              <Ionicons name="logo-google" size={20} color={isDark ? '#fff' : '#444'} style={{ marginRight: 10 }} />
-            )}
-            <Text style={[styles.googleButtonText, { color: isDark ? '#fff' : '#444' }]}>
-              {t('auth.continueWithGoogle')}
-            </Text>
-          </TouchableOpacity>
+
 
           <View style={styles.footer}>
             <Text style={{ color: colors.textMuted }}>
@@ -216,35 +157,6 @@ const styles = StyleSheet.create({
     borderRadius: radii.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
-  },
-  dividerContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: spacing.xl,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-  },
-  dividerText: {
-    marginHorizontal: spacing.md,
-    fontFamily: typography.label,
-    fontSize: rf(12),
-  },
-  googleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing.md,
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    marginBottom: spacing.lg,
-  },
-  googleButtonText: {
-    fontFamily: typography.label,
-    fontSize: rf(14),
-    textTransform: 'uppercase',
-    letterSpacing: 1,
   },
   footer: {
     flexDirection: 'row',

@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { NotificationController } from '../utils/NotificationController';
+import { useActivityStore } from './activityStore';
 
 export interface ThoughtEntry {
   id: string;
@@ -16,7 +18,7 @@ export interface ThoughtEntry {
 
 interface ThoughtState {
   entries: ThoughtEntry[];
-  addEntry: (entry: Omit<ThoughtEntry, 'id' | 'timestamp'>) => void;
+  addEntry: (entry: Omit<ThoughtEntry, 'id' | 'timestamp'> & { id?: string }) => void;
   deleteEntry: (id: string) => void;
   setEntries: (entries: ThoughtEntry[]) => void;
 }
@@ -28,9 +30,20 @@ export const useThoughtStore = create<ThoughtState>()(
       addEntry: (entryData) => {
         const newEntry: ThoughtEntry = {
           ...entryData,
-          id: Date.now().toString(),
+          id: entryData.id || Date.now().toString(),
           timestamp: Date.now(),
         };
+
+        // Postpone check-in reminder if enabled
+        try {
+          const isReminderEnabled = useActivityStore.getState().dailyCheckInReminderEnabled;
+          if (isReminderEnabled) {
+            NotificationController.postponeDailyReminderToTomorrow();
+          }
+        } catch (e) {
+          console.warn('Failed to postpone check-in reminder:', e);
+        }
+
         set((state) => ({
           entries: [newEntry, ...state.entries],
         }));

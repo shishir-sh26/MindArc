@@ -2,15 +2,21 @@ import { collection, query, where, getDocs, limit, orderBy } from 'firebase/fire
 import { db } from './firebase';
 import { useMoodStore, MoodEntry } from '../store/moodStore';
 import { useThoughtStore, ThoughtEntry } from '../store/thoughtStore';
+import { syncStreakData } from './streakService';
 
 export const syncUserDataFromFirestore = async (userId: string) => {
+  try {
+    // Sync streak details and validate daily break
+    await syncStreakData(userId);
+  } catch (error) {
+    console.warn('[Sync] Warning syncing streak data (offline/network issue):', error);
+  }
   try {
     console.log(`[Sync] Starting Firestore sync for user: ${userId}`);
 
     // 1. Sync Mood Tracker Logs
     const moodQuery = query(
-      collection(db, 'tracker_logs'),
-      where('user_id', '==', userId),
+      collection(db, 'users', userId, 'tracker_logs'),
       limit(50)
     );
     const moodSnapshot = await getDocs(moodQuery);
@@ -26,6 +32,7 @@ export const syncUserDataFromFirestore = async (userId: string) => {
         sleepHours: data.sleep_hours || 7,
         sleepQuality: data.sleep_quality || 'okay',
         thoughtDiary: data.thought_diary || '',
+        appetite: data.appetite || 'normal',
         timestamp: data.created_at ? Date.parse(data.created_at) : Date.now(),
       });
     });
@@ -37,8 +44,7 @@ export const syncUserDataFromFirestore = async (userId: string) => {
 
     // 2. Sync Thought Diary Logs
     const thoughtQuery = query(
-      collection(db, 'thought_logs'),
-      where('user_id', '==', userId),
+      collection(db, 'users', userId, 'thought_logs'),
       limit(50)
     );
     const thoughtSnapshot = await getDocs(thoughtQuery);
@@ -65,6 +71,6 @@ export const syncUserDataFromFirestore = async (userId: string) => {
     console.log(`[Sync] Synced ${thoughtEntries.length} thought entries successfully.`);
 
   } catch (error) {
-    console.error('[Sync] Error synchronizing data from Firestore:', error);
+    console.warn('[Sync] Warning synchronizing data from Firestore (offline/network issue):', error);
   }
 };

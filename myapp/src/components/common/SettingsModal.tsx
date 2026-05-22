@@ -13,13 +13,15 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
+import Svg, { Path } from 'react-native-svg';
 
 interface SettingsModalProps {
   visible: boolean;
   onClose: () => void;
+  onNavigateToUserDetails?: () => void;
 }
 
-export const SettingsModal = ({ visible, onClose }: SettingsModalProps) => {
+export const SettingsModal = ({ visible, onClose, onNavigateToUserDetails }: SettingsModalProps) => {
   const { t } = useTranslation();
   const { colors, isDark, toggleTheme } = useTheme();
   const { user } = useAuthStore();
@@ -31,6 +33,7 @@ export const SettingsModal = ({ visible, onClose }: SettingsModalProps) => {
   const [extraDetails, setExtraDetails] = useState<any>(null);
   const [isEditingInline, setIsEditingInline] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showAboutInfo, setShowAboutInfo] = useState(false);
 
   useEffect(() => {
     if (visible && user) {
@@ -64,24 +67,26 @@ export const SettingsModal = ({ visible, onClose }: SettingsModalProps) => {
 
   const saveProfile = async () => {
     if (!user) return;
-    setIsSaving(true);
     try {
-      await setDoc(doc(db, 'users', user.uid), {
+      // Save to Firestore in background (Optimistic background sync)
+      setDoc(doc(db, 'users', user.uid), {
         name: profileName,
         bio: profileBio,
         email: user.email,
         updated_at: new Date().toISOString()
-      }, { merge: true });
+      }, { merge: true }).catch(e => {
+        console.warn('Background Firestore sync failed:', e);
+      });
       
-      // Update local state to reflect changes
+      // Update local state instantly (Optimistic UI updates)
       setHasProfile(true);
       setIsEditingInline(false);
-      
-      // Fetch fresh doc
-      const freshDoc = await getDoc(doc(db, 'users', user.uid));
-      if (freshDoc.exists()) {
-        setExtraDetails(freshDoc.data());
-      }
+      setExtraDetails((prev: any) => ({
+        ...prev,
+        name: profileName,
+        bio: profileBio,
+        updated_at: new Date().toISOString()
+      }));
 
       import('react-native').then(({ Alert }) => {
         Alert.alert("Success", "Basic profile details saved!");
@@ -91,8 +96,6 @@ export const SettingsModal = ({ visible, onClose }: SettingsModalProps) => {
       import('react-native').then(({ Alert }) => {
         Alert.alert("Error", "Could not save profile details.");
       });
-    } finally {
-      setIsSaving(false);
     }
   };
 
@@ -101,7 +104,8 @@ export const SettingsModal = ({ visible, onClose }: SettingsModalProps) => {
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+    <>
+      <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.modalBg}>
         <View style={[styles.modalCard, { backgroundColor: isDark ? 'rgba(13,27,11,0.95)' : 'rgba(240,247,232,0.95)', borderColor: colors.border }]}>
           
@@ -145,7 +149,13 @@ export const SettingsModal = ({ visible, onClose }: SettingsModalProps) => {
                       style={[styles.primaryActionBtn, { backgroundColor: colors.accent }]}
                       onPress={() => {
                         onClose();
-                        navigation.navigate('UserDetails');
+                        if (onNavigateToUserDetails) {
+                          onNavigateToUserDetails();
+                        } else {
+                          setTimeout(() => {
+                            navigation.navigate('UserDetails');
+                          }, 150);
+                        }
                       }}
                     >
                       <Ionicons name="create-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
@@ -239,7 +249,13 @@ export const SettingsModal = ({ visible, onClose }: SettingsModalProps) => {
                         style={[styles.saveBtn, { backgroundColor: colors.accent, flex: 1 }]}
                         onPress={() => {
                           onClose();
-                          navigation.navigate('UserDetails');
+                          if (onNavigateToUserDetails) {
+                            onNavigateToUserDetails();
+                          } else {
+                            setTimeout(() => {
+                              navigation.navigate('UserDetails');
+                            }, 150);
+                          }
                         }}
                       >
                         <Ionicons name="eye-outline" size={18} color="#fff" style={{ marginRight: 6 }} />
@@ -263,13 +279,13 @@ export const SettingsModal = ({ visible, onClose }: SettingsModalProps) => {
             <Text style={[styles.sectionTitle, { color: colors.textMuted, marginTop: spacing.md }]}>{t('settings.theme')}</Text>
             <View style={styles.buttonRow}>
               <TouchableOpacity 
-                style={[styles.optionBtn, !isDark && { backgroundColor: colors.accent, borderColor: colors.accent }, { borderColor: colors.border, backgroundColor: colors.surface }]}
+                style={[styles.optionBtn, !isDark ? { backgroundColor: colors.accent, borderColor: colors.accent } : { backgroundColor: colors.surface, borderColor: colors.border }]}
                 onPress={() => { if (isDark) toggleTheme(); }}
               >
                 <Text style={[styles.optionText, !isDark ? { color: '#fff' } : { color: colors.text }]}>{t('settings.lightMode')}</Text>
               </TouchableOpacity>
               <TouchableOpacity 
-                style={[styles.optionBtn, isDark && { backgroundColor: colors.accent, borderColor: colors.accent }, { borderColor: colors.border, backgroundColor: colors.surface }]}
+                style={[styles.optionBtn, isDark ? { backgroundColor: colors.accent, borderColor: colors.accent } : { backgroundColor: colors.surface, borderColor: colors.border }]}
                 onPress={() => { if (!isDark) toggleTheme(); }}
               >
                 <Text style={[styles.optionText, isDark ? { color: '#fff' } : { color: colors.text }]}>{t('settings.darkMode')}</Text>
@@ -280,13 +296,13 @@ export const SettingsModal = ({ visible, onClose }: SettingsModalProps) => {
             <Text style={[styles.sectionTitle, { color: colors.textMuted, marginTop: spacing.xl }]}>{t('settings.language')}</Text>
             <View style={styles.buttonRow}>
               <TouchableOpacity 
-                style={[styles.optionBtn, i18next.language === 'en' && { backgroundColor: colors.accent, borderColor: colors.accent }, { borderColor: colors.border, backgroundColor: colors.surface }]}
+                style={[styles.optionBtn, i18next.language === 'en' ? { backgroundColor: colors.accent, borderColor: colors.accent } : { backgroundColor: colors.surface, borderColor: colors.border }]}
                 onPress={() => changeLanguage('en')}
               >
                 <Text style={[styles.optionText, i18next.language === 'en' ? { color: '#fff' } : { color: colors.text }]}>{t('settings.english')}</Text>
               </TouchableOpacity>
               <TouchableOpacity 
-                style={[styles.optionBtn, i18next.language === 'kn' && { backgroundColor: colors.accent, borderColor: colors.accent }, { borderColor: colors.border, backgroundColor: colors.surface }]}
+                style={[styles.optionBtn, i18next.language === 'kn' ? { backgroundColor: colors.accent, borderColor: colors.accent } : { backgroundColor: colors.surface, borderColor: colors.border }]}
                 onPress={() => changeLanguage('kn')}
               >
                 <Text style={[styles.optionText, i18next.language === 'kn' ? { color: '#fff' } : { color: colors.text }]}>{t('settings.kannada')}</Text>
@@ -297,11 +313,7 @@ export const SettingsModal = ({ visible, onClose }: SettingsModalProps) => {
             <Text style={[styles.sectionTitle, { color: colors.textMuted, marginTop: spacing.xl }]}>About</Text>
             <TouchableOpacity 
               style={[styles.aboutBtn, { borderColor: colors.border, backgroundColor: colors.surface }]}
-              onPress={() => {
-                import('react-native').then(({ Alert }) => {
-                  Alert.alert("About MindArc", "MindArc is your personal mental health companion. Built with care to help you track moods, reframe thoughts, and find moments of peace in your busy day.\n\nVersion 1.0.0");
-                });
-              }}
+              onPress={() => setShowAboutInfo(true)}
             >
               <Ionicons name="information-circle-outline" size={20} color={colors.text} style={{ marginRight: 10 }} />
               <Text style={[styles.aboutText, { color: colors.text }]}>MindArc Information</Text>
@@ -329,6 +341,74 @@ export const SettingsModal = ({ visible, onClose }: SettingsModalProps) => {
         </View>
       </View>
     </Modal>
+
+    {/* Premium Visual About Modal */}
+    <Modal visible={showAboutInfo} transparent animationType="fade" onRequestClose={() => setShowAboutInfo(false)}>
+      <View style={styles.aboutModalBg}>
+        <View style={[styles.aboutModalCard, { backgroundColor: isDark ? 'rgba(11,26,9,0.98)' : 'rgba(235,245,225,0.98)', borderColor: colors.border }]}>
+          
+          <View style={[styles.aboutHeaderBadge, { backgroundColor: colors.accentSoft }]}>
+            {/* Botanical Premium Svg Logo inside About Modal */}
+            <Svg width="56" height="56" viewBox="0 0 24 24">
+              <Path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2M12 18V10M12 6H12.01" stroke={colors.accent} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+            </Svg>
+          </View>
+
+          <Text style={[styles.aboutTitleText, { color: colors.text }]}>MindArc</Text>
+          <Text style={[styles.aboutSubtitleText, { color: colors.accent }]}>Your Botanical Mind Companion</Text>
+          <Text style={[styles.aboutVersionText, { color: colors.textMuted }]}>Version 1.2.0 (Build 302)</Text>
+
+          <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+          <ScrollView style={styles.aboutScroll} showsVerticalScrollIndicator={false}>
+            <Text style={[styles.aboutDescription, { color: colors.text }]}>
+              MindArc is designed to help you nurture mental clarity, track holistic patterns, and find deep relaxation in your daily life. It uses evidence-based Cognitive Behavioral tools alongside soothing breathing and nature soundtracks.
+            </Text>
+
+            <Text style={[styles.featuresHeader, { color: colors.text }]}>KEY COMPANION FEATURES</Text>
+            
+            <View style={styles.featureItem}>
+              <Ionicons name="flame-outline" size={16} color={colors.accent} style={{ marginRight: 8 }} />
+              <Text style={[styles.featureText, { color: colors.text }]}>Daily Mood Tracker & Streak Retention</Text>
+            </View>
+            <View style={styles.featureItem}>
+              <Ionicons name="journal-outline" size={16} color={colors.accent} style={{ marginRight: 8 }} />
+              <Text style={[styles.featureText, { color: colors.text }]}>CBT Reframing Thought Diary</Text>
+            </View>
+            <View style={styles.featureItem}>
+              <Ionicons name="radio-button-off-outline" size={16} color={colors.accent} style={{ marginRight: 8 }} />
+              <Text style={[styles.featureText, { color: colors.text }]}>Box Breathing Guided Meditation</Text>
+            </View>
+            <View style={styles.featureItem}>
+              <Ionicons name="musical-notes-outline" size={16} color={colors.accent} style={{ marginRight: 8 }} />
+              <Text style={[styles.featureText, { color: colors.text }]}>Immersive Nature Soundscapes</Text>
+            </View>
+            <View style={styles.featureItem}>
+              <Ionicons name="walk-outline" size={16} color={colors.accent} style={{ marginRight: 8 }} />
+              <Text style={[styles.featureText, { color: colors.text }]}>Interactive Step Counter & Activity Goals</Text>
+            </View>
+            <View style={styles.featureItem}>
+              <Ionicons name="restaurant-outline" size={16} color={colors.accent} style={{ marginRight: 8 }} />
+              <Text style={[styles.featureText, { color: colors.text }]}>Personalized Appetite Guidelines</Text>
+            </View>
+            
+            <Text style={[styles.creditsText, { color: colors.textMuted }]}>
+              Designed and built with care by the MindArc Developer Team. Incorporating high-fidelity botanical styling & responsive native modules.
+            </Text>
+          </ScrollView>
+
+          <TouchableOpacity 
+            style={[styles.aboutCloseBtn, { backgroundColor: colors.accent }]}
+            onPress={() => setShowAboutInfo(false)}
+          >
+            <Ionicons name="close" size={18} color="#fff" style={{ marginRight: 6 }} />
+            <Text style={styles.aboutCloseBtnText}>{t('settings.close')}</Text>
+          </TouchableOpacity>
+
+        </View>
+      </View>
+    </Modal>
+    </>
   );
 };
 
@@ -540,5 +620,109 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 1,
     fontWeight: 'bold',
+  },
+  aboutModalBg: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.lg,
+  },
+  aboutModalCard: {
+    width: '92%',
+    maxHeight: '80%',
+    padding: spacing.xl,
+    borderRadius: 28,
+    borderWidth: 1.5,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 15,
+    elevation: 24,
+  },
+  aboutHeaderBadge: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.sm,
+  },
+  aboutTitleText: {
+    fontFamily: typography.display,
+    fontSize: rf(26),
+    fontWeight: 'bold',
+    marginBottom: 2,
+  },
+  aboutSubtitleText: {
+    fontFamily: typography.body,
+    fontSize: rf(14),
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  aboutVersionText: {
+    fontFamily: typography.mono,
+    fontSize: rf(11),
+    marginBottom: spacing.md,
+  },
+  divider: {
+    width: '100%',
+    height: 1,
+    marginBottom: spacing.md,
+  },
+  aboutScroll: {
+    width: '100%',
+    flexGrow: 0,
+    marginBottom: spacing.lg,
+  },
+  aboutDescription: {
+    fontFamily: typography.body,
+    fontSize: rf(13.5),
+    lineHeight: rf(19),
+    textAlign: 'center',
+    marginBottom: spacing.md,
+  },
+  featuresHeader: {
+    fontFamily: typography.label,
+    fontSize: rf(11),
+    fontWeight: 'bold',
+    letterSpacing: 1,
+    marginTop: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  featureItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.xs,
+    alignSelf: 'flex-start',
+    paddingHorizontal: spacing.sm,
+  },
+  featureText: {
+    fontFamily: typography.body,
+    fontSize: rf(13),
+  },
+  creditsText: {
+    fontFamily: typography.body,
+    fontSize: rf(11.5),
+    lineHeight: rf(17),
+    textAlign: 'center',
+    marginTop: spacing.md,
+  },
+  aboutCloseBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: hp(1.6),
+    paddingHorizontal: spacing.xl,
+    borderRadius: radii.pill,
+    width: '100%',
+  },
+  aboutCloseBtnText: {
+    color: '#fff',
+    fontFamily: typography.label,
+    fontSize: rf(13),
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
   }
 });
