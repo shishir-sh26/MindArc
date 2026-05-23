@@ -122,8 +122,8 @@ export default function BreathingScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ForestBackground bgHeightRatio={0.40} showBottomPlants />
       <View style={styles.header}>
-        <Text style={[styles.title, { color: '#0D160D' }]}>{t('breathing.title')}</Text>
-        <Text style={[styles.subtitle, { color: '#0D160D' }]}>
+        <Text style={[styles.title, { color: '#F4F9F4' }]}>{t('breathing.title')}</Text>
+        <Text style={[styles.subtitle, { color: '#D4C9B2' }]}>
           {t('breathing.subtitle')}
         </Text>
       </View>
