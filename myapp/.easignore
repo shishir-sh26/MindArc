@@ -1,0 +1,57 @@
+# ====================================================================
+# UNIFIED EASIGNORE FOR MINDARC EXPO BUILDER
+# Tells EAS CLI what files to upload (DO NOT IGNORE google-services.json)
+# ====================================================================
+
+# 1. Credentials we want to keep secret even from EAS cloud builder
+credentials.json
+.env
+.env.local
+.env.development
+.env.development.local
+.env.test
+.env.test.local
+.env.production
+.env.production.local
+*.env
+myapp/.env
+backend/.env
+*.pem
+*.key
+*.pub
+
+# 2. Frontend: dependencies & caches
+node_modules/
+myapp/node_modules/
+.expo/
+myapp/.expo/
+dist/
+myapp/dist/
+web-build/
+myapp/web-build/
+expo-env.d.ts
+myapp/expo-env.d.ts
+myapp/eas-build-*.json
+myapp/.eas/
+.eas/
+ios/
+myapp/ios/
+android/
+myapp/android/
+
+# 3. Signing keys
+*.jks
+*.p8
+*.p12
+*.keystore
+*.mobileprovision
+*.orig.*
+
+# 4. System & IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+.cursor/
+tmp/
+temp/
