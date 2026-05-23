@@ -20,6 +20,18 @@ export const en = {
     afternoon: 'afternoon',
     evening: 'evening',
     howAreYou: 'How are you feeling today?',
+    affirmations: {
+      q0: "take it one breath at a time",
+      q1: "you are exactly where you need to be",
+      q2: "peace is a practice, not a destination",
+      q3: "your potential to heal is infinite",
+      q4: "allow yourself to rest",
+      q5: "growth happens in the pauses",
+      q6: "you are safe in this moment",
+      q7: "inhale courage, exhale doubt",
+      q8: "soften your shoulders, soften your heart",
+      q9: "you are not your anxious thoughts"
+    },
     relaxationCalming: 'Relaxation & Calming',
     trackingJournaling: 'Tracking & Journaling',
     yogaMovement: 'Yoga & Movement',

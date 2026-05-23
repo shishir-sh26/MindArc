@@ -12,36 +12,60 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
+import { useUserStore } from '../../store/userStore';
 
 export default function UserDetailsScreen() {
   const { colors, isDark } = useTheme();
   const { user } = useAuthStore();
+  const { profile, setProfile } = useUserStore();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const [isFetchingBackground, setIsFetchingBackground] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Form Fields
-  const [name, setName] = useState('');
-  const [bio, setBio] = useState('');
-  const [age, setAge] = useState('');
-  const [gender, setGender] = useState('');
-  const [stepGoal, setStepGoal] = useState('6000');
-  const [waterGoal, setWaterGoal] = useState('8'); // in cups/glasses
-  const [focusArea, setFocusArea] = useState('Anxiety Reduction');
-  const [preferredWorkout, setPreferredWorkout] = useState('Yoga');
+  // Form Fields (instantly populated from local cache)
+  const [name, setName] = useState(profile.name || user?.displayName || '');
+  const [bio, setBio] = useState(profile.bio || '');
+  const [age, setAge] = useState(profile.age || '');
+  const [gender, setGender] = useState(profile.gender || '');
+  const [stepGoal, setStepGoal] = useState(profile.stepGoal || '6000');
+  const [waterGoal, setWaterGoal] = useState(profile.waterGoal || '8'); // in cups/glasses
+  const [focusArea, setFocusArea] = useState(profile.focusArea || 'Anxiety Reduction');
+  const [preferredWorkout, setPreferredWorkout] = useState(profile.preferredWorkout || 'Yoga');
 
   useEffect(() => {
     if (user) {
-      // Instantly pre-populate displayName from local auth store
-      setName(user.displayName || '');
+      // 1. Sync state to current cache values
+      setName(profile.name || user.displayName || '');
+      setBio(profile.bio || '');
+      setAge(profile.age || '');
+      setGender(profile.gender || '');
+      setStepGoal(profile.stepGoal || '6000');
+      setWaterGoal(profile.waterGoal || '8');
+      setFocusArea(profile.focusArea || 'Anxiety Reduction');
+      setPreferredWorkout(profile.preferredWorkout || 'Yoga');
       
+      // 2. Cloud Sync Load in the background
       const fetchUserDetails = async () => {
         setIsFetchingBackground(true);
         try {
           const userDoc = await getDoc(doc(db, 'users', user.uid));
           if (userDoc.exists()) {
             const data = userDoc.data();
+            
+            // Sync to Zustand store cache
+            const updates: any = {};
+            if (data.name !== undefined) updates.name = data.name;
+            if (data.bio !== undefined) updates.bio = data.bio;
+            if (data.age !== undefined) updates.age = data.age.toString();
+            if (data.gender !== undefined) updates.gender = data.gender;
+            if (data.stepGoal !== undefined) updates.stepGoal = data.stepGoal.toString();
+            if (data.waterGoal !== undefined) updates.waterGoal = data.waterGoal.toString();
+            if (data.focusArea !== undefined) updates.focusArea = data.focusArea;
+            if (data.preferredWorkout !== undefined) updates.preferredWorkout = data.preferredWorkout;
+
+            setProfile(updates);
+
             if (data.name) setName(data.name);
             if (data.bio) setBio(data.bio);
             if (data.age) setAge(data.age.toString());
@@ -65,7 +89,19 @@ export default function UserDetailsScreen() {
     if (!user) return;
     setIsSaving(true);
     try {
-      // Fire-and-forget background synchronization
+      // 1. Instant Cache Update
+      setProfile({
+        name,
+        bio,
+        age,
+        gender,
+        stepGoal,
+        waterGoal,
+        focusArea,
+        preferredWorkout,
+      });
+
+      // 2. Fire-and-forget background synchronization to Firestore
       setDoc(doc(db, 'users', user.uid), {
         name,
         bio,

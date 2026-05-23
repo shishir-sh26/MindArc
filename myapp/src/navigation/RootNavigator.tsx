@@ -10,6 +10,7 @@ import { auth } from '../utils/firebase';
 import { useAuthStore } from '../store/authStore';
 import { syncUserDataFromFirestore } from '../utils/syncService';
 import { useActivityStore } from '../store/activityStore';
+import { SkeletonLoader } from '../components/common/SkeletonLoader';
 
 import AuthScreen from '../screens/auth/AuthScreen';
 import ModuleDetailScreen from '../screens/learn/ModuleDetailScreen';
@@ -44,8 +45,8 @@ export const RootNavigator = () => {
 
   if (isLoading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
-        <ActivityIndicator size="large" color={colors.accent} />
+      <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: 60 }}>
+        <SkeletonLoader layout="home" />
       </View>
     );
   }

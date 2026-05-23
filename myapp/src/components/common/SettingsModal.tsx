@@ -8,6 +8,7 @@ import { wp, hp, rf } from '../../utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import i18next from 'i18next';
 import { useAuthStore } from '../../store/authStore';
+import { useUserStore } from '../../store/userStore';
 import { db } from '../../utils/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useNavigation } from '@react-navigation/native';
@@ -25,6 +26,7 @@ export const SettingsModal = ({ visible, onClose, onNavigateToUserDetails }: Set
   const { t } = useTranslation();
   const { colors, isDark, toggleTheme } = useTheme();
   const { user } = useAuthStore();
+  const { profile, setProfile } = useUserStore();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const [profileName, setProfileName] = useState('');
@@ -37,24 +39,37 @@ export const SettingsModal = ({ visible, onClose, onNavigateToUserDetails }: Set
 
   useEffect(() => {
     if (visible && user) {
-      setProfileName(user.displayName || '');
-      setProfileBio('');
-      setHasProfile(false);
-      setExtraDetails(null);
+      // 1. Instant Cache Load
+      setProfileName(profile.name || user.displayName || '');
+      setProfileBio(profile.bio || '');
+      setHasProfile(!!(profile.name || profile.bio || profile.age || profile.gender || profile.focusArea));
+      setExtraDetails(profile);
       setIsEditingInline(false);
       
+      // 2. Background Cloud Sync Load
       const loadProfile = async () => {
         try {
           const userDoc = await getDoc(doc(db, 'users', user.uid));
           if (userDoc.exists()) {
             const data = userDoc.data();
-            setExtraDetails(data);
-            if (data.name) setProfileName(data.name);
-            if (data.bio) setProfileBio(data.bio);
             
-            // If the user has completed at least basic identity or profile goals
-            if (data.name || data.bio || data.age || data.gender || data.focusArea) {
-              setHasProfile(true);
+            // Sync to Zustand cache if data changed
+            const updates: any = {};
+            if (data.name !== undefined && data.name !== profile.name) updates.name = data.name;
+            if (data.bio !== undefined && data.bio !== profile.bio) updates.bio = data.bio;
+            if (data.age !== undefined && data.age.toString() !== profile.age) updates.age = data.age.toString();
+            if (data.gender !== undefined && data.gender !== profile.gender) updates.gender = data.gender;
+            if (data.stepGoal !== undefined && data.stepGoal.toString() !== profile.stepGoal) updates.stepGoal = data.stepGoal.toString();
+            if (data.waterGoal !== undefined && data.waterGoal.toString() !== profile.waterGoal) updates.waterGoal = data.waterGoal.toString();
+            if (data.focusArea !== undefined && data.focusArea !== profile.focusArea) updates.focusArea = data.focusArea;
+            if (data.preferredWorkout !== undefined && data.preferredWorkout !== profile.preferredWorkout) updates.preferredWorkout = data.preferredWorkout;
+            
+            if (Object.keys(updates).length > 0) {
+              setProfile(updates);
+              setProfileName(data.name || '');
+              setProfileBio(data.bio || '');
+              setHasProfile(!!(data.name || data.bio || data.age || data.gender || data.focusArea));
+              setExtraDetails({ ...profile, ...data });
             }
           }
         } catch (e) {
@@ -68,16 +83,12 @@ export const SettingsModal = ({ visible, onClose, onNavigateToUserDetails }: Set
   const saveProfile = async () => {
     if (!user) return;
     try {
-      // Save to Firestore in background (Optimistic background sync)
-      setDoc(doc(db, 'users', user.uid), {
+      // 1. Instant Cache Update
+      setProfile({
         name: profileName,
         bio: profileBio,
-        email: user.email,
-        updated_at: new Date().toISOString()
-      }, { merge: true }).catch(e => {
-        console.warn('Background Firestore sync failed:', e);
       });
-      
+
       // Update local state instantly (Optimistic UI updates)
       setHasProfile(true);
       setIsEditingInline(false);
@@ -87,6 +98,16 @@ export const SettingsModal = ({ visible, onClose, onNavigateToUserDetails }: Set
         bio: profileBio,
         updated_at: new Date().toISOString()
       }));
+
+      // 2. Save to Firestore in background (Optimistic background sync)
+      setDoc(doc(db, 'users', user.uid), {
+        name: profileName,
+        bio: profileBio,
+        email: user.email,
+        updated_at: new Date().toISOString()
+      }, { merge: true }).catch(e => {
+        console.warn('Background Firestore sync failed:', e);
+      });
 
       import('react-native').then(({ Alert }) => {
         Alert.alert("Success", "Basic profile details saved!");
@@ -125,10 +146,16 @@ export const SettingsModal = ({ visible, onClose, onNavigateToUserDetails }: Set
                 
                 <View style={styles.avatarRow}>
                   {user.photoURL ? (
-                    <Image source={{ uri: user.photoURL }} style={styles.avatarImg} />
+                    <Image source={{ uri: user.photoURL }} style={[styles.avatarImg, { borderColor: colors.accent }]} />
                   ) : (
-                    <View style={[styles.avatarPlaceholder, { backgroundColor: colors.accentSoft }]}>
-                      <Ionicons name="person" size={26} color={colors.accent} />
+                    <View style={[styles.avatarPlaceholder, { backgroundColor: isDark ? 'rgba(77, 191, 110, 0.12)' : 'rgba(90, 156, 58, 0.12)', borderColor: colors.accent }]}>
+                      {profileName ? (
+                        <Text style={[styles.avatarInitial, { color: colors.accent }]}>
+                          {profileName.trim().charAt(0).toUpperCase()}
+                        </Text>
+                      ) : (
+                        <Ionicons name="person" size={26} color={colors.accent} />
+                      )}
                     </View>
                   )}
                   <View style={styles.emailContainer}>
@@ -213,40 +240,61 @@ export const SettingsModal = ({ visible, onClose, onNavigateToUserDetails }: Set
                     </View>
                   </View>
                 ) : (
-                  // Case 2: Profile exists, display dashboard details with View/Update buttons
+                  // Case 2: Profile exists, display dashboard details with clean grid and vertical premium edit buttons
                   <View style={{ marginTop: spacing.xs }}>
                     {profileBio ? (
-                      <Text style={[styles.bioPreviewText, { color: colors.text }]}>
-                        &quot;{profileBio}&quot;
-                      </Text>
+                      <View style={[styles.bioCard, { backgroundColor: isDark ? 'rgba(77, 191, 110, 0.05)' : 'rgba(90, 156, 58, 0.06)', borderLeftColor: colors.accent }]}>
+                        <Text style={[styles.bioPreviewText, { color: colors.text, fontStyle: 'italic' }]}>
+                          &quot;{profileBio}&quot;
+                        </Text>
+                      </View>
                     ) : null}
 
-                    <View style={styles.miniGrid}>
-                      {extraDetails?.age ? (
-                        <Text style={[styles.miniGridText, { color: colors.textMuted }]}>
-                          🎂 Age: <Text style={{ color: colors.text, fontWeight: 'bold' }}>{extraDetails.age}</Text>
-                        </Text>
-                      ) : null}
-                      {extraDetails?.gender ? (
-                        <Text style={[styles.miniGridText, { color: colors.textMuted }]}>
-                          👤 Gender: <Text style={{ color: colors.text, fontWeight: 'bold' }}>{extraDetails.gender}</Text>
-                        </Text>
-                      ) : null}
-                      {extraDetails?.stepGoal ? (
-                        <Text style={[styles.miniGridText, { color: colors.textMuted }]}>
-                          🔥 Steps: <Text style={{ color: colors.text, fontWeight: 'bold' }}>{extraDetails.stepGoal}</Text>
-                        </Text>
-                      ) : null}
-                      {extraDetails?.focusArea ? (
-                        <Text style={[styles.miniGridText, { color: colors.textMuted }]}>
-                          🎯 Focus: <Text style={{ color: colors.text, fontWeight: 'bold' }}>{extraDetails.focusArea}</Text>
-                        </Text>
-                      ) : null}
+                    <View style={styles.infoGrid}>
+                      <View style={[styles.gridItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                        <Text style={styles.gridItemIcon}>🎂</Text>
+                        <View style={{ flex: 1 }}>
+                          <Text style={[styles.gridItemLabel, { color: colors.textMuted }]}>Age</Text>
+                          <Text style={[styles.gridItemValue, { color: colors.text }]} numberOfLines={1}>
+                            {extraDetails?.age || '—'}
+                          </Text>
+                        </View>
+                      </View>
+
+                      <View style={[styles.gridItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                        <Text style={styles.gridItemIcon}>👤</Text>
+                        <View style={{ flex: 1 }}>
+                          <Text style={[styles.gridItemLabel, { color: colors.textMuted }]}>Gender</Text>
+                          <Text style={[styles.gridItemValue, { color: colors.text }]} numberOfLines={1}>
+                            {extraDetails?.gender || '—'}
+                          </Text>
+                        </View>
+                      </View>
+
+                      <View style={[styles.gridItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                        <Text style={styles.gridItemIcon}>🔥</Text>
+                        <View style={{ flex: 1 }}>
+                          <Text style={[styles.gridItemLabel, { color: colors.textMuted }]}>Steps Goal</Text>
+                          <Text style={[styles.gridItemValue, { color: colors.text }]} numberOfLines={1}>
+                            {extraDetails?.stepGoal || '6000'}
+                          </Text>
+                        </View>
+                      </View>
+
+                      <View style={[styles.gridItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+                        <Text style={styles.gridItemIcon}>🎯</Text>
+                        <View style={{ flex: 1 }}>
+                          <Text style={[styles.gridItemLabel, { color: colors.textMuted }]}>Focus Area</Text>
+                          <Text style={[styles.gridItemValue, { color: colors.text }]} numberOfLines={1}>
+                            {extraDetails?.focusArea || 'Mindfulness'}
+                          </Text>
+                        </View>
+                      </View>
                     </View>
 
-                    <View style={{ flexDirection: 'row', gap: 10, marginTop: spacing.md }}>
+                    <View style={{ gap: 10, marginTop: spacing.lg }}>
                       <TouchableOpacity 
-                        style={[styles.saveBtn, { backgroundColor: colors.accent, flex: 1 }]}
+                        style={[styles.premiumEditBtn, { backgroundColor: colors.accent, shadowColor: colors.accent }]}
                         onPress={() => {
                           onClose();
                           if (onNavigateToUserDetails) {
@@ -258,16 +306,16 @@ export const SettingsModal = ({ visible, onClose, onNavigateToUserDetails }: Set
                           }
                         }}
                       >
-                        <Ionicons name="eye-outline" size={18} color="#fff" style={{ marginRight: 6 }} />
-                        <Text style={styles.saveBtnText}>View Full</Text>
+                        <Ionicons name="settings-outline" size={18} color="#fff" style={{ marginRight: 8 }} />
+                        <Text style={styles.premiumEditBtnText}>Edit Goals & Wellness</Text>
                       </TouchableOpacity>
 
                       <TouchableOpacity 
-                        style={[styles.saveBtn, { backgroundColor: colors.surfaceAlt, borderColor: colors.border, borderWidth: 1, flex: 1 }]}
+                        style={[styles.premiumEditBtnSecondary, { borderColor: colors.border, backgroundColor: colors.surface }]}
                         onPress={() => setIsEditingInline(true)}
                       >
-                        <Ionicons name="create-outline" size={18} color={colors.text} style={{ marginRight: 6 }} />
-                        <Text style={[styles.saveBtnText, { color: colors.text }]}>Update Basic</Text>
+                        <Ionicons name="create-outline" size={18} color={colors.accent} style={{ marginRight: 8 }} />
+                        <Text style={[styles.premiumEditBtnText, { color: colors.text }]}>Update Name & Bio</Text>
                       </TouchableOpacity>
                     </View>
                   </View>
@@ -451,67 +499,136 @@ const styles = StyleSheet.create({
     marginBottom: hp(1.2),
   },
   profileSection: {
-    padding: spacing.md,
-    borderRadius: radii.lg,
+    padding: spacing.lg,
+    borderRadius: 24,
     borderWidth: 1,
     marginBottom: hp(2.5),
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
   },
   avatarRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: hp(1.5),
-    gap: 12,
+    marginBottom: hp(2),
+    gap: 14,
   },
   avatarImg: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    borderWidth: 2,
   },
   avatarPlaceholder: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 2,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  avatarInitial: {
+    fontFamily: typography.display,
+    fontSize: rf(20),
+    fontWeight: 'bold',
   },
   emailContainer: {
     flex: 1,
   },
   emailLabel: {
     fontFamily: typography.body,
-    fontSize: rf(14),
+    fontSize: rf(16),
     fontWeight: 'bold',
+    letterSpacing: 0.2,
   },
   userIdText: {
     fontFamily: typography.mono,
-    fontSize: rf(11),
-    marginTop: 2,
+    fontSize: rf(10),
+    marginTop: 3,
+    letterSpacing: 0.5,
+    opacity: 0.8,
   },
   profileInfoText: {
     fontFamily: typography.body,
     fontSize: rf(13),
-    lineHeight: rf(18),
+    lineHeight: rf(19),
+  },
+  bioCard: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    marginBottom: hp(2),
+    marginTop: hp(0.5),
   },
   bioPreviewText: {
     fontFamily: typography.body,
-    fontStyle: 'italic',
-    fontSize: rf(13.5),
-    lineHeight: rf(18),
-    marginBottom: hp(1),
+    fontSize: rf(13),
+    lineHeight: rf(19),
   },
-  miniGrid: {
+  infoGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    justifyContent: 'space-between',
+    gap: 10,
     marginTop: hp(0.5),
   },
-  miniGridText: {
+  gridItem: {
+    width: '48%',
+    padding: spacing.md,
+    borderRadius: 16,
+    borderWidth: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  gridItemIcon: {
+    fontSize: rf(18),
+  },
+  gridItemLabel: {
+    fontFamily: typography.label,
+    fontSize: rf(9),
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  gridItemValue: {
     fontFamily: typography.body,
+    fontSize: rf(12),
+    fontWeight: 'bold',
+  },
+  premiumEditBtn: {
+    flexDirection: 'row',
+    paddingVertical: hp(1.6),
+    borderRadius: radii.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 3,
+  },
+  premiumEditBtnSecondary: {
+    flexDirection: 'row',
+    paddingVertical: hp(1.6),
+    borderRadius: radii.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    borderWidth: 1.5,
+  },
+  premiumEditBtnText: {
+    color: '#fff',
+    fontFamily: typography.label,
     fontSize: rf(12.5),
-    backgroundColor: 'rgba(255,255,255,0.06)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   primaryActionBtn: {
     flexDirection: 'row',

@@ -5,6 +5,7 @@ import { useTheme } from '../../hooks/useTheme';
 import { getGreeting } from '../../utils/dateHelpers';
 import { AFFIRMATIONS } from '../../utils/constants';
 import { useMoodStore } from '../../store/moodStore';
+import { useUserStore } from '../../store/userStore';
 import { spacing, radii } from '../../../theme/spacing';
 import { typography } from '../../../theme/typography';
 import { wp, hp, rf } from '../../utils/responsive';
@@ -21,7 +22,7 @@ import { yogaContent } from '../../data/yogaContent';
 import { ForestBackground } from '../../components/common/ForestBackground';
 import { SettingsModal } from '../../components/common/SettingsModal';
 import { db, auth } from '../../utils/firebase';
-import { collection, addDoc, doc, setDoc } from 'firebase/firestore';
+import { collection, addDoc, doc, setDoc, getDoc } from 'firebase/firestore';
 import { updateUserStreak, isYesterday } from '../../utils/streakService';
 import { syncUserDataFromFirestore } from '../../utils/syncService';
 
@@ -46,6 +47,7 @@ export default function HomeScreen({ navigation }: Props) {
   const { t } = useTranslation();
   const { colors, isDark, toggleTheme } = useTheme();
   const { entries, streak, streakBroken, addEntry } = useMoodStore();
+  const { profile, setProfile } = useUserStore();
   const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   
@@ -55,9 +57,8 @@ export default function HomeScreen({ navigation }: Props) {
   const today = todayDate;
   const todaysMood = entries.find(e => e.date === today);
   
-  // Affirmation based on day of year
-  const dayOfYear = Math.floor((new Date().getTime() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 1000 / 60 / 60 / 24);
-  const dailyAffirmation = AFFIRMATIONS[dayOfYear % AFFIRMATIONS.length];
+  // Random affirmation state index (0 to 9)
+  const [quoteIndex, setQuoteIndex] = useState(0);
   const greeting = getGreeting();
 
   // Entrance animations
@@ -69,17 +70,43 @@ export default function HomeScreen({ navigation }: Props) {
   
   const cardScale = useSharedValue(1);
 
-  // Dynamic date recalculation and background sync on screen focus
+  // Dynamic date recalculation, background sync, and random quote selection on screen focus
   useEffect(() => {
     if (isFocused) {
       const currentToday = new Date().toISOString().split('T')[0];
       setTodayDate(currentToday);
+
+      // Select a random localized quote index (0 to 9)
+      const randomIndex = Math.floor(Math.random() * 10);
+      setQuoteIndex(randomIndex);
       
       const user = auth.currentUser;
       if (user) {
         console.log("[HomeScreen] Screen focused, running background sync...");
         syncUserDataFromFirestore(user.uid).catch(err => {
           console.warn("[HomeScreen] Background sync failed:", err);
+        });
+
+        // Sync user profile details in the background
+        getDoc(doc(db, 'users', user.uid)).then(userDoc => {
+          if (userDoc.exists()) {
+            const data = userDoc.data();
+            const updates: any = {};
+            if (data.name !== undefined) updates.name = data.name;
+            if (data.bio !== undefined) updates.bio = data.bio;
+            if (data.age !== undefined) updates.age = data.age.toString();
+            if (data.gender !== undefined) updates.gender = data.gender;
+            if (data.stepGoal !== undefined) updates.stepGoal = data.stepGoal.toString();
+            if (data.waterGoal !== undefined) updates.waterGoal = data.waterGoal.toString();
+            if (data.focusArea !== undefined) updates.focusArea = data.focusArea;
+            if (data.preferredWorkout !== undefined) updates.preferredWorkout = data.preferredWorkout;
+            
+            if (Object.keys(updates).length > 0) {
+              setProfile(updates);
+            }
+          }
+        }).catch(err => {
+          console.warn("[HomeScreen] Profile background sync failed:", err);
         });
       }
     }
@@ -205,7 +232,7 @@ export default function HomeScreen({ navigation }: Props) {
       <AnimatedView style={[styles.header, headerAnimatedStyle]}>
         <View style={styles.headerLeft}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={[styles.greeting, { color: colors.text }]}>{t('home.greeting', { time: t(`home.${greeting}`) })} {t('home.friend')}</Text>
+            <Text style={[styles.greeting, { color: colors.text }]}>{t('home.greeting', { time: t(`home.${greeting}`) })} {profile.name || t('home.friend')}</Text>
             {/* Tiny botanical SVG */}
             <Svg width="24" height="24" viewBox="0 0 24 24" style={{ marginLeft: 8 }}>
               <Path d="M12 22V10M12 10C8 10 4 14 4 14C4 14 8 18 12 18M12 10C16 10 20 6 20 6C20 6 16 2 12 2" stroke={colors.accent} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
@@ -262,7 +289,9 @@ export default function HomeScreen({ navigation }: Props) {
       {/* Daily Affirmation Card */}
       <View style={[styles.affirmationCard, { backgroundColor: isDark ? 'rgba(13,27,11,0.88)' : 'rgba(240,247,232,0.88)', borderColor: colors.border, shadowColor }]}>
         <Text style={[styles.quoteGlyph, { color: colors.accent, opacity: 0.25 }]}>&quot;</Text>
-        <Text style={[styles.affirmationText, { color: colors.text }]}>{dailyAffirmation}</Text>
+        <Text style={[styles.affirmationText, { color: colors.text }]}>
+          {t('home.affirmations.q' + quoteIndex)}
+        </Text>
       </View>
 
       {/* Feature Sections */}

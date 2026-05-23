@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Linking } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, ActivityIndicator, Linking, Alert } from 'react-native';
 import { useTheme } from '../../hooks/useTheme';
 import { spacing, radii } from '../../../theme/spacing';
 import { typography } from '../../../theme/typography';
@@ -11,6 +11,10 @@ import Svg, { Rect, Circle, Path, G } from 'react-native-svg';
 import * as HapticsAPI from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { db } from '../../utils/firebase';
+import { useAuthStore } from '../../store/authStore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 const AnimatedView = Animated.createAnimatedComponent(View);
@@ -259,8 +263,9 @@ const MythChecker = () => {
     setResult(null);
     HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Medium);
 
-    // Using the detected local IP or EXPO_PUBLIC_API_URL
-    const baseUrl = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.37:8000';
+    // Using the detected local IP, EXPO_PUBLIC_API_URL, or falling back to live Render production backend
+    const rawBaseUrl = process.env.EXPO_PUBLIC_API_URL || 'https://mentalhealthapp-11.onrender.com';
+    const baseUrl = rawBaseUrl.endsWith('/') ? rawBaseUrl.slice(0, -1) : rawBaseUrl;
     const apiUrl = `${baseUrl}/api/v1/myth-check`;
 
     try {
@@ -347,24 +352,122 @@ const MythChecker = () => {
 const SupportContacts = () => {
   const { colors } = useTheme();
   const { t } = useTranslation();
-  
-  const contacts = [
-    { name: t('learn.sim.contactEmergency', { defaultValue: "Emergency Services" }), phone: "911", icon: "alert-circle", color: "#FF4444" },
+  const { user } = useAuthStore();
+
+  // Custom contact states
+  const [therapistNumber, setTherapistNumber] = useState('');
+  const [otherNumber, setOtherNumber] = useState('');
+
+  // Editing state toggles
+  const [isEditingTherapist, setIsEditingTherapist] = useState(false);
+  const [isEditingOther, setIsEditingOther] = useState(false);
+
+  // Temporary inputs
+  const [tempTherapist, setTempTherapist] = useState('');
+  const [tempOther, setTempOther] = useState('');
+
+  // Load custom numbers on mount
+  useEffect(() => {
+    const loadNumbers = async () => {
+      try {
+        // 1. Instant Offline Load
+        const storedTherapist = await AsyncStorage.getItem('custom_therapist_number');
+        const storedOther = await AsyncStorage.getItem('custom_other_number');
+        if (storedTherapist) {
+          setTherapistNumber(storedTherapist);
+          setTempTherapist(storedTherapist);
+        }
+        if (storedOther) {
+          setOtherNumber(storedOther);
+          setTempOther(storedOther);
+        }
+
+        // 2. Cloud Sync Load
+        if (user) {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (userDoc.exists()) {
+            const data = userDoc.data();
+            if (data.custom_therapist_number !== undefined && data.custom_therapist_number !== storedTherapist) {
+              setTherapistNumber(data.custom_therapist_number);
+              setTempTherapist(data.custom_therapist_number);
+              await AsyncStorage.setItem('custom_therapist_number', data.custom_therapist_number);
+            }
+            if (data.custom_other_number !== undefined && data.custom_other_number !== storedOther) {
+              setOtherNumber(data.custom_other_number);
+              setTempOther(data.custom_other_number);
+              await AsyncStorage.setItem('custom_other_number', data.custom_other_number);
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to load custom emergency contacts in library:', e);
+      }
+    };
+    loadNumbers();
+  }, [user]);
+
+  const handleSaveTherapist = async () => {
+    try {
+      // 1. Offline Save
+      await AsyncStorage.setItem('custom_therapist_number', tempTherapist);
+      setTherapistNumber(tempTherapist);
+      setIsEditingTherapist(false);
+
+      // 2. Cloud Save
+      if (user) {
+        await setDoc(doc(db, 'users', user.uid), {
+          custom_therapist_number: tempTherapist
+        }, { merge: true });
+      }
+
+      Alert.alert(t('crisis.successSave') || "Saved", t('crisis.successSave') || "Your therapist number has been updated!");
+    } catch (e) {
+      Alert.alert(t('crisis.error') || "Error", "Could not save therapist number");
+    }
+  };
+
+  const handleSaveOther = async () => {
+    try {
+      // 1. Offline Save
+      await AsyncStorage.setItem('custom_other_number', tempOther);
+      setOtherNumber(tempOther);
+      setIsEditingOther(false);
+
+      // 2. Cloud Save
+      if (user) {
+        await setDoc(doc(db, 'users', user.uid), {
+          custom_other_number: tempOther
+        }, { merge: true });
+      }
+
+      Alert.alert(t('crisis.successSave') || "Saved", t('crisis.successSave') || "Your custom number has been updated!");
+    } catch (e) {
+      Alert.alert(t('crisis.error') || "Error", "Could not save custom emergency number");
+    }
+  };
+
+  const handleCall = (number: string) => {
+    if (!number) return;
+    HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Heavy);
+    const formattedNumber = number.replace(/[^\d+]/g, '');
+    Linking.openURL(`tel:${formattedNumber}`);
+  };
+
+  // Standard professional directory + custom ones
+  const standardContacts = [
+    { name: t('learn.sim.contactEmergency', { defaultValue: "Emergency Services" }), phone: "112", icon: "alert-circle", color: "#FF4444" },
     { name: t('learn.sim.contactSuicide', { defaultValue: "National Suicide Prevention" }), phone: "988", icon: "heart", color: "#FF8800" },
-    { name: t('learn.sim.contactPsychiatrist', { defaultValue: "Dr. Aris (Psychiatrist)" }), phone: "+15550123", icon: "person", color: colors.accent },
-    { name: t('learn.sim.contactTherapist', { defaultValue: "Dr. Sarah (Therapist)" }), phone: "+15550456", icon: "chatbubbles", color: colors.reflect },
     { name: t('learn.sim.contactTextLine', { defaultValue: "Crisis Text Line" }), phone: "741741", icon: "phone-portrait", color: "#44BBFF" }
   ];
 
-  const handleCall = (number: string) => {
-    HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Heavy);
-    Linking.openURL(`tel:${number}`);
-  };
-
   return (
     <View style={[simStyles.container, { backgroundColor: colors.surface, borderColor: colors.border, shadowColor: colors.accentDeep }]}>
-      <Text style={[simStyles.title, { color: colors.text, marginBottom: hp(2) }]}>{t('learn.sim.contactsTitle', { defaultValue: "Professional Contacts" })}</Text>
-      {contacts.map((contact, index) => (
+      <Text style={[simStyles.title, { color: colors.text, marginBottom: hp(2) }]}>
+        {t('learn.sim.contactsTitle', { defaultValue: "Professional & Personal Contacts" })}
+      </Text>
+
+      {/* 1. Standard National Contacts */}
+      {standardContacts.map((contact, index) => (
         <TouchableOpacity 
           key={index}
           onPress={() => handleCall(contact.phone)}
@@ -372,23 +475,135 @@ const SupportContacts = () => {
             flexDirection: 'row',
             alignItems: 'center',
             backgroundColor: colors.surfaceAlt,
-            padding: hp(2),
+            padding: hp(1.8),
             borderRadius: 16,
             marginBottom: hp(1.5),
             borderLeftWidth: 4,
             borderLeftColor: contact.color
           }}
         >
-          <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: contact.color + '22', alignItems: 'center', justifyContent: 'center', marginRight: hp(2) }}>
-            <Ionicons name={contact.icon as any} size={20} color={contact.color} />
+          <View style={{ width: 38, height: 38, borderRadius: 19, backgroundColor: contact.color + '22', alignItems: 'center', justifyContent: 'center', marginRight: hp(1.8) }}>
+            <Ionicons name={contact.icon as any} size={18} color={contact.color} />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: typography.label, color: colors.text, fontSize: rf(15) }}>{contact.name}</Text>
-            <Text style={{ fontFamily: typography.body, color: colors.textMuted, fontSize: rf(13) }}>{contact.phone}</Text>
+            <Text style={{ fontFamily: typography.label, color: colors.text, fontSize: rf(14), fontWeight: '700' }}>{contact.name}</Text>
+            <Text style={{ fontFamily: typography.body, color: colors.textMuted, fontSize: rf(12.5) }}>{contact.phone}</Text>
           </View>
-          <Ionicons name="call-outline" size={20} color={colors.accent} />
+          <Ionicons name="call-outline" size={18} color={colors.accent} />
         </TouchableOpacity>
       ))}
+
+      {/* 2. Custom Personal Contacts Slot - Therapist */}
+      <View style={{ marginTop: hp(1), borderTopWidth: 1, borderTopColor: colors.borderLight, paddingTop: hp(2) }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: hp(1.2) }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: colors.accentSoft, alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="medical" size={14} color={colors.accent} />
+            </View>
+            <Text style={{ fontFamily: typography.label, color: colors.text, fontSize: rf(13.5), fontWeight: '700' }}>
+              {t('crisis.therapistLabel', { defaultValue: "My Personal Therapist" })}
+            </Text>
+          </View>
+          {!isEditingTherapist && (
+            <TouchableOpacity onPress={() => { setTempTherapist(therapistNumber); setIsEditingTherapist(true); }} style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+              <Ionicons name="create-outline" size={14} color={colors.accent} />
+              <Text style={{ fontFamily: typography.body, color: colors.accent, fontSize: rf(12), fontWeight: '600' }}>{t('crisis.edit', { defaultValue: "Edit" })}</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {isEditingTherapist ? (
+          <View style={{ gap: 8 }}>
+            <TextInput
+              style={{ height: 44, borderWidth: 1.5, borderColor: colors.border, borderRadius: 12, paddingHorizontal: 12, color: colors.text, fontSize: rf(13), fontFamily: typography.body, backgroundColor: colors.surface }}
+              value={tempTherapist}
+              onChangeText={setTempTherapist}
+              placeholder={t('crisis.therapistPlaceholder', { defaultValue: "Enter therapist phone number" })}
+              placeholderTextColor={colors.textMuted}
+              keyboardType="phone-pad"
+            />
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <TouchableOpacity onPress={handleSaveTherapist} style={{ flex: 1, height: 36, backgroundColor: colors.accent, borderRadius: 18, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ color: '#fff', fontSize: rf(12), fontFamily: typography.label, fontWeight: 'bold' }}>{t('crisis.save', { defaultValue: "Save" })}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setIsEditingTherapist(false)} style={{ flex: 1, height: 36, borderWidth: 1, borderColor: colors.border, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface }}>
+                <Text style={{ color: colors.textMuted, fontSize: rf(12), fontFamily: typography.label, fontWeight: 'bold' }}>{t('crisis.cancel', { defaultValue: "Cancel" })}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : (
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: colors.surfaceAlt, padding: hp(1.5), borderRadius: 16, marginBottom: hp(1.5) }}>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontFamily: typography.mono, color: therapistNumber ? colors.text : colors.textMuted, fontSize: rf(15), fontWeight: '700' }}>
+                {therapistNumber || t('crisis.notSet', { defaultValue: "Not Set" })}
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => handleCall(therapistNumber)}
+              disabled={!therapistNumber}
+              style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: therapistNumber ? colors.danger : colors.border, alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Ionicons name="call" size={16} color="#fff" />
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+
+      {/* 3. Custom Personal Contacts Slot - Personal Emergency */}
+      <View style={{ marginTop: hp(1) }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: hp(1.2) }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: colors.accentSoft, alignItems: 'center', justifyContent: 'center' }}>
+              <Ionicons name="people" size={14} color={colors.accent} />
+            </View>
+            <Text style={{ fontFamily: typography.label, color: colors.text, fontSize: rf(13.5), fontWeight: '700' }}>
+              {t('crisis.otherLabel', { defaultValue: "Emergency Contact" })}
+            </Text>
+          </View>
+          {!isEditingOther && (
+            <TouchableOpacity onPress={() => { setTempOther(otherNumber); setIsEditingOther(true); }} style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+              <Ionicons name="create-outline" size={14} color={colors.accent} />
+              <Text style={{ fontFamily: typography.body, color: colors.accent, fontSize: rf(12), fontWeight: '600' }}>{t('crisis.edit', { defaultValue: "Edit" })}</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {isEditingOther ? (
+          <View style={{ gap: 8 }}>
+            <TextInput
+              style={{ height: 44, borderWidth: 1.5, borderColor: colors.border, borderRadius: 12, paddingHorizontal: 12, color: colors.text, fontSize: rf(13), fontFamily: typography.body, backgroundColor: colors.surface }}
+              value={tempOther}
+              onChangeText={setTempOther}
+              placeholder={t('crisis.otherPlaceholder', { defaultValue: "Enter contact phone number" })}
+              placeholderTextColor={colors.textMuted}
+              keyboardType="phone-pad"
+            />
+            <View style={{ flexDirection: 'row', gap: 8 }}>
+              <TouchableOpacity onPress={handleSaveOther} style={{ flex: 1, height: 36, backgroundColor: colors.accent, borderRadius: 18, alignItems: 'center', justifyContent: 'center' }}>
+                <Text style={{ color: '#fff', fontSize: rf(12), fontFamily: typography.label, fontWeight: 'bold' }}>{t('crisis.save', { defaultValue: "Save" })}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setIsEditingOther(false)} style={{ flex: 1, height: 36, borderWidth: 1, borderColor: colors.border, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.surface }}>
+                <Text style={{ color: colors.textMuted, fontSize: rf(12), fontFamily: typography.label, fontWeight: 'bold' }}>{t('crisis.cancel', { defaultValue: "Cancel" })}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : (
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: colors.surfaceAlt, padding: hp(1.5), borderRadius: 16 }}>
+            <View style={{ flex: 1 }}>
+              <Text style={{ fontFamily: typography.mono, color: otherNumber ? colors.text : colors.textMuted, fontSize: rf(15), fontWeight: '700' }}>
+                {otherNumber || t('crisis.notSet', { defaultValue: "Not Set" })}
+              </Text>
+            </View>
+            <TouchableOpacity
+              onPress={() => handleCall(otherNumber)}
+              disabled={!otherNumber}
+              style={{ width: 34, height: 34, borderRadius: 17, backgroundColor: otherNumber ? colors.danger : colors.border, alignItems: 'center', justifyContent: 'center' }}
+            >
+              <Ionicons name="call" size={16} color="#fff" />
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
     </View>
   );
 };
@@ -405,7 +620,8 @@ const LifestyleAssessment = () => {
     setLoading(true);
     HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Heavy);
     try {
-      const baseUrl = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.1.37:8000';
+      const rawBaseUrl = process.env.EXPO_PUBLIC_API_URL || 'https://mentalhealthapp-11.onrender.com';
+      const baseUrl = rawBaseUrl.endsWith('/') ? rawBaseUrl.slice(0, -1) : rawBaseUrl;
       const response = await fetch(`${baseUrl}/api/v1/lifestyle-plan`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

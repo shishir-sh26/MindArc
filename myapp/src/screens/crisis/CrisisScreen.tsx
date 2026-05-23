@@ -9,10 +9,14 @@ import { typography } from '../../../theme/typography';
 import { wp, hp, rf } from '../../utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import { db } from '../../utils/firebase';
+import { useAuthStore } from '../../store/authStore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 export default function CrisisScreen() {
   const { t } = useTranslation();
   const { colors, isDark } = useTheme();
+  const { user } = useAuthStore();
 
   // Custom contact states
   const [therapistNumber, setTherapistNumber] = useState('');
@@ -30,6 +34,7 @@ export default function CrisisScreen() {
   useEffect(() => {
     const loadNumbers = async () => {
       try {
+        // 1. Instant Offline Load
         const storedTherapist = await AsyncStorage.getItem('custom_therapist_number');
         const storedOther = await AsyncStorage.getItem('custom_other_number');
         if (storedTherapist) {
@@ -40,18 +45,45 @@ export default function CrisisScreen() {
           setOtherNumber(storedOther);
           setTempOther(storedOther);
         }
+
+        // 2. Cloud Sync Load
+        if (user) {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (userDoc.exists()) {
+            const data = userDoc.data();
+            if (data.custom_therapist_number !== undefined && data.custom_therapist_number !== storedTherapist) {
+              setTherapistNumber(data.custom_therapist_number);
+              setTempTherapist(data.custom_therapist_number);
+              await AsyncStorage.setItem('custom_therapist_number', data.custom_therapist_number);
+            }
+            if (data.custom_other_number !== undefined && data.custom_other_number !== storedOther) {
+              setOtherNumber(data.custom_other_number);
+              setTempOther(data.custom_other_number);
+              await AsyncStorage.setItem('custom_other_number', data.custom_other_number);
+            }
+          }
+        }
       } catch (e) {
         console.warn('Failed to load custom emergency contacts:', e);
       }
     };
     loadNumbers();
-  }, []);
+  }, [user]);
 
   const handleSaveTherapist = async () => {
     try {
+      // 1. Offline Save
       await AsyncStorage.setItem('custom_therapist_number', tempTherapist);
       setTherapistNumber(tempTherapist);
       setIsEditingTherapist(false);
+
+      // 2. Cloud Save
+      if (user) {
+        await setDoc(doc(db, 'users', user.uid), {
+          custom_therapist_number: tempTherapist
+        }, { merge: true });
+      }
+
       Alert.alert(t('crisis.successSave') || "Saved", t('crisis.successSave') || "Your therapist number has been updated!");
     } catch (e) {
       Alert.alert(t('crisis.error'), "Could not save therapist number");
@@ -60,9 +92,18 @@ export default function CrisisScreen() {
 
   const handleSaveOther = async () => {
     try {
+      // 1. Offline Save
       await AsyncStorage.setItem('custom_other_number', tempOther);
       setOtherNumber(tempOther);
       setIsEditingOther(false);
+
+      // 2. Cloud Save
+      if (user) {
+        await setDoc(doc(db, 'users', user.uid), {
+          custom_other_number: tempOther
+        }, { merge: true });
+      }
+
       Alert.alert(t('crisis.successSave') || "Saved", t('crisis.successSave') || "Your custom number has been updated!");
     } catch (e) {
       Alert.alert(t('crisis.error'), "Could not save custom emergency number");
