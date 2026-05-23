@@ -23,7 +23,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.company.Mindarc",
+      "package": "com.company.mindarc",
       "googleServicesFile": "./google-services.json",
       "permissions": [
         "android.permission.ACTIVITY_RECOGNITION"

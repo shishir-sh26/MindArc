@@ -163,5 +163,5 @@ temp/
 *.orig
 build/
 out/
-"google.json" 
-"credentials.json" 
+google-services.json
+credentials.json
