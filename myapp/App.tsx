@@ -10,6 +10,7 @@ import { CormorantGaramond_600SemiBold, CormorantGaramond_500Medium, CormorantGa
 import { Nunito_400Regular, Nunito_500Medium, Nunito_400Regular_Italic } from '@expo-google-fonts/nunito';
 import { DMSans_500Medium } from '@expo-google-fonts/dm-sans';
 import { DMMono_400Regular } from '@expo-google-fonts/dm-mono';
+import { Fredoka_400Regular, Fredoka_500Medium, Fredoka_600SemiBold, Fredoka_700Bold } from '@expo-google-fonts/fredoka';
 import { usePedometer } from './src/hooks/usePedometer';
 
 LogBox.ignoreLogs(['expo-notifications: Android Push notifications']);
@@ -30,6 +31,10 @@ export default function App() {
     Nunito_Italic: Nunito_400Regular_Italic,
     DMSans: DMSans_500Medium,
     DMMono: DMMono_400Regular,
+    Fredoka: Fredoka_400Regular,
+    Fredoka_Medium: Fredoka_500Medium,
+    Fredoka_SemiBold: Fredoka_600SemiBold,
+    Fredoka_Bold: Fredoka_700Bold,
   });
 
   if (!fontsLoaded) {
