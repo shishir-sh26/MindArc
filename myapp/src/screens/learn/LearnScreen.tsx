@@ -25,7 +25,7 @@ export default function LearnScreen({ navigation }: Props) {
       <ForestBackground bgHeightRatio={0.38} showBottomPlants />
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>{t('learn.title')}</Text>
-        <Text style={[styles.subtitle, { color: colors.text }]}>{t('learn.subtitle')}</Text>
+        <Text style={[styles.subtitle, { color: '#F4F9F4' }]}>{t('learn.subtitle')}</Text>
       </View>
       
       <FlatList

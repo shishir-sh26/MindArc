@@ -44,7 +44,7 @@ export default function NatureSoundsScreen() {
       >
         <View style={styles.header}>
           <Text style={[styles.title, { color: '#1A2419' }]}>{t('sounds.title')}</Text>
-          <Text style={[styles.subtitle, { color: '#0D160D' }]}>
+          <Text style={[styles.subtitle, { color: '#F4F9F4' }]}>
             {t('sounds.subtitle')}
           </Text>
         </View>

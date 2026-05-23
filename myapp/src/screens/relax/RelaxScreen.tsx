@@ -30,7 +30,7 @@ export default function RelaxScreen({ navigation }: Props) {
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>{t('relax.title')}</Text>
-        <Text style={[styles.subtitle, { color: colors.text }]}>
+        <Text style={[styles.subtitle, { color: '#F4F9F4' }]}>
           {t('relax.subtitle')}
         </Text>
       </View>
