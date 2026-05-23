@@ -9,6 +9,7 @@ import { wp, hp, rf } from '../../utils/responsive';
 import { ForestBackground } from '../../components/common/ForestBackground';
 import { Button } from '../../components/common/Button';
 import { useTranslation } from 'react-i18next';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function AuthScreen() {
   const { t } = useTranslation();
@@ -16,11 +17,19 @@ export default function AuthScreen() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleAuth = async () => {
     if (!email || !password) {
       Alert.alert('Error', 'Please enter both email and password.');
+      return;
+    }
+
+    if (!isLogin && password !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match. Please verify your safety password.');
       return;
     }
 
@@ -73,15 +82,39 @@ export default function AuthScreen() {
  
           <View style={styles.inputContainer}>
             <Text style={[styles.label, { color: colors.text }]}>{t('auth.password')}</Text>
-            <TextInput
-              style={[styles.input, { backgroundColor: colors.surfaceAlt, color: colors.text, borderColor: colors.border }]}
-              placeholder={t('auth.passwordPlaceholder')}
-              placeholderTextColor={colors.textMuted}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-            />
+            <View style={[styles.passwordWrapper, { backgroundColor: colors.surfaceAlt, borderColor: colors.border }]}>
+              <TextInput
+                style={[styles.passwordInput, { color: colors.text }]}
+                placeholder={t('auth.passwordPlaceholder')}
+                placeholderTextColor={colors.textMuted}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPassword}
+              />
+              <TouchableOpacity style={styles.eyeBtn} onPress={() => setShowPassword(!showPassword)}>
+                <Ionicons name={showPassword ? "eye-off" : "eye"} size={20} color={colors.textMuted} />
+              </TouchableOpacity>
+            </View>
           </View>
+
+          {!isLogin && (
+            <View style={styles.inputContainer}>
+              <Text style={[styles.label, { color: colors.text }]}>Confirm Password</Text>
+              <View style={[styles.passwordWrapper, { backgroundColor: colors.surfaceAlt, borderColor: colors.border }]}>
+                <TextInput
+                  style={[styles.passwordInput, { color: colors.text }]}
+                  placeholder={t('auth.passwordPlaceholder')}
+                  placeholderTextColor={colors.textMuted}
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  secureTextEntry={!showConfirmPassword}
+                />
+                <TouchableOpacity style={styles.eyeBtn} onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
+                  <Ionicons name={showConfirmPassword ? "eye-off" : "eye"} size={20} color={colors.textMuted} />
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
  
           <Button 
             title={isLogin ? t('auth.logIn') : t('auth.signUp')} 
@@ -157,6 +190,23 @@ const styles = StyleSheet.create({
     borderRadius: radii.md,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
+  },
+  passwordWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderRadius: radii.md,
+    paddingRight: spacing.md,
+  },
+  passwordInput: {
+    flex: 1,
+    fontFamily: typography.body,
+    fontSize: rf(16),
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+  },
+  eyeBtn: {
+    padding: 4,
   },
   footer: {
     flexDirection: 'row',

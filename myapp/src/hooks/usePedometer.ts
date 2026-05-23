@@ -52,8 +52,9 @@ export const usePedometer = () => {
         const magnitude = Math.sqrt(x * x + y * y + z * z);
         const now = Date.now();
 
-        // 1.22 G is typical peak force for a step/shake, debounced by 360ms
-        if (magnitude > 1.22 && now - lastStepTime > 360) {
+        // 1.55 G is typical peak force for a physical walking step, debounced by 450ms.
+        // This filters out minor twitches/shakes and only scans actual footsteps.
+        if (magnitude > 1.55 && now - lastStepTime > 450) {
           lastStepTime = now;
           addSteps(1);
         }
