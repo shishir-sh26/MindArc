@@ -43,8 +43,8 @@ export default function NatureSoundsScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
-          <Text style={[styles.title, { color: colors.text }]}>{t('sounds.title')}</Text>
-          <Text style={[styles.subtitle, { color: colors.textMuted }]}>
+          <Text style={[styles.title, { color: '#1A2419' }]}>{t('sounds.title')}</Text>
+          <Text style={[styles.subtitle, { color: '#0D160D' }]}>
             {t('sounds.subtitle')}
           </Text>
         </View>
@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
   content: { padding: spacing.lg, paddingBottom: spacing.xxxl },
   header: { marginBottom: spacing.xl, marginTop: spacing.md },
   title: { fontSize: 28, fontWeight: 'bold' },
-  subtitle: { fontSize: 16, marginTop: spacing.xs },
+  subtitle: { fontSize: 16, fontWeight: '700', marginTop: spacing.xs },
   grid: { 
     flexDirection: 'row', 
     flexWrap: 'wrap', 

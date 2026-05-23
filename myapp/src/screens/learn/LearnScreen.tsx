@@ -74,6 +74,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 16,
+    fontWeight: '700',
     marginTop: spacing.xs,
   },
   listContent: {

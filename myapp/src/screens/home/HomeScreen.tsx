@@ -232,7 +232,7 @@ export default function HomeScreen({ navigation }: Props) {
       <AnimatedView style={[styles.header, headerAnimatedStyle]}>
         <View style={styles.headerLeft}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={[styles.greeting, { color: colors.text }]}>{t('home.greeting', { time: t(`home.${greeting}`) })} {profile.name || t('home.friend')}</Text>
+            <Text style={[styles.greeting, { color: '#F4F9F4' }]}>{t('home.greeting', { time: t(`home.${greeting}`) })} {profile.name || t('home.friend')}</Text>
             {/* Tiny botanical SVG */}
             <Svg width="24" height="24" viewBox="0 0 24 24" style={{ marginLeft: 8 }}>
               <Path d="M12 22V10M12 10C8 10 4 14 4 14C4 14 8 18 12 18M12 10C16 10 20 6 20 6C20 6 16 2 12 2" stroke={colors.accent} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />

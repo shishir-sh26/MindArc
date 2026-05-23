@@ -30,7 +30,7 @@ export default function RelaxScreen({ navigation }: Props) {
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>{t('relax.title')}</Text>
-        <Text style={[styles.subtitle, { color: colors.textMuted }]}>
+        <Text style={[styles.subtitle, { color: colors.text }]}>
           {t('relax.subtitle')}
         </Text>
       </View>
@@ -92,6 +92,7 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 16,
+    fontWeight: '700',
     marginTop: spacing.xs,
   },
   card: {
@@ -119,6 +120,7 @@ const styles = StyleSheet.create({
   },
   cardSub: {
     fontSize: 14,
+    fontWeight: '600',
     lineHeight: 20,
   }
 });
