@@ -10,6 +10,7 @@ import { rf } from '../../utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
+import { HapticFeedback } from '../../utils/HapticFeedback';
 import * as Haptics from 'expo-haptics';
 
 type Props = {
@@ -23,7 +24,7 @@ export default function ThoughtDiaryScreen({ navigation }: Props) {
 
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    HapticFeedback.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     await new Promise(resolve => setTimeout(resolve, 800));
     setRefreshing(false);
   }, []);
@@ -115,6 +116,7 @@ const styles = StyleSheet.create({
   listContent: {
     padding: spacing.lg,
     paddingBottom: 120, // For FAB and floating nav bar
+    flexGrow: 1,
   },
   card: {
     marginBottom: spacing.md,
@@ -151,9 +153,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   emptyState: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 100,
+    paddingBottom: 100, // Offset slightly upwards to account for tab bar and look centered
   },
   emptyText: {
     marginTop: spacing.md,

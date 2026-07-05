@@ -12,7 +12,12 @@
       "supportsTablet": true,
       "infoPlist": {
         "NSMotionUsageDescription": "This app uses motion sensor data to track your daily steps and help you maintain your activity goals.",
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "UIBackgroundModes": [
+          "location",
+          "processing",
+          "fetch"
+        ]
       },
       "bundleIdentifier": "com.company.mindarc"
     },
@@ -28,7 +33,10 @@
       "package": "com.company.mindarc",
       "googleServicesFile": "./google-services.json",
       "permissions": [
-        "android.permission.ACTIVITY_RECOGNITION"
+        "android.permission.ACTIVITY_RECOGNITION",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_HEALTH",
+        "android.permission.WAKE_LOCK"
       ]
     },
     "web": {

@@ -18,6 +18,7 @@ export type RootStackParamList = {
   NewThoughtEntry: undefined;
   Breathing: undefined;
   NatureSounds: undefined;
+  RelievingGames: undefined;
   YogaPlayer: { videoUrl: string, title: string };
   Crisis: undefined;
   UserDetails: undefined;

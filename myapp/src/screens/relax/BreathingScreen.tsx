@@ -17,6 +17,7 @@ import { spacing, radii } from '../../../theme/spacing';
 import { typography } from '../../../theme/typography';
 import { hp, wp, rf } from '../../utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
+import { HapticFeedback } from '../../utils/HapticFeedback';
 import * as HapticsAPI from 'expo-haptics';
 import { useTranslation } from 'react-i18next';
 
@@ -46,7 +47,7 @@ export default function BreathingScreen() {
 
   const updatePhase = (newPhase: string, addBreath = false) => {
     setPhaseText(newPhase);
-    HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Light);
+    HapticFeedback.impactAsync(HapticsAPI.ImpactFeedbackStyle.Light);
     
     opacityText.value = withSequence(
       withTiming(0, { duration: 300 }),
@@ -195,12 +196,15 @@ const styles = StyleSheet.create({
     textShadowRadius: 2.5,
   },
   subtitle: {
-    fontFamily: typography.body,
+    fontFamily: typography.display,
     fontSize: rf(16),
     fontWeight: '700',
     textAlign: 'center',
     marginTop: hp(1),
     lineHeight: rf(24),
+    textShadowColor: '#000000',
+    textShadowOffset: { width: -1.2, height: 1.2 },
+    textShadowRadius: 2.2,
   },
   animationContainer: {
     flex: 1,

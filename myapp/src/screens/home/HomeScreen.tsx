@@ -15,7 +15,7 @@ import { CompositeScreenProps, useNavigation, useIsFocused } from '@react-naviga
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, withDelay, Easing, runOnJS } from 'react-native-reanimated';
 import Svg, { Path, Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
-import * as HapticsAPI from 'expo-haptics';
+import { HapticFeedback as HapticsAPI } from '../../utils/HapticFeedback';
 import { Ionicons } from '@expo/vector-icons';
 import YoutubeIframe from 'react-native-youtube-iframe';
 import { yogaContent } from '../../data/yogaContent';
@@ -26,22 +26,23 @@ import { collection, addDoc, doc, setDoc, getDoc } from 'firebase/firestore';
 import { updateUserStreak, isYesterday } from '../../utils/streakService';
 import { syncUserDataFromFirestore } from '../../utils/syncService';
 import { NotificationController } from '../../utils/NotificationController';
+import { MoodIcon } from '../tracker/TrackerScreen';
+
+const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
+const AnimatedView = Animated.createAnimatedComponent(View);
 
 type Props = CompositeScreenProps<
   BottomTabScreenProps<BottomTabParamList, 'Home'>,
   NativeStackScreenProps<RootStackParamList>
 >;
 
-const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
-const AnimatedView = Animated.createAnimatedComponent(View);
-
 // Emojis for mood
 const MOODS = [
-  { value: 1, emoji: '😔' },
-  { value: 2, emoji: '😟' },
-  { value: 3, emoji: '😐' },
-  { value: 4, emoji: '🙂' },
-  { value: 5, emoji: '😊' },
+  { value: 1 },
+  { value: 2 },
+  { value: 3 },
+  { value: 4 },
+  { value: 5 },
 ];
 
 export default function HomeScreen({ navigation }: Props) {
@@ -56,6 +57,9 @@ export default function HomeScreen({ navigation }: Props) {
   const [customTitle, setCustomTitle] = useState('');
   const [customBody, setCustomBody] = useState('');
   const [customDelay, setCustomDelay] = useState('10'); // Default 10 seconds
+  const [notificationMode, setNotificationMode] = useState<'delay' | 'hourly' | 'daily'>('delay');
+  const [dailyHour, setDailyHour] = useState('08');
+  const [dailyMinute, setDailyMinute] = useState('00');
 
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
@@ -322,10 +326,15 @@ export default function HomeScreen({ navigation }: Props) {
       {/* Mood Banner */}
       {!todaysMood && (
         <AnimatedView style={[styles.moodBanner, { backgroundColor: isDark ? 'rgba(13,27,11,0.90)' : 'rgba(240,247,232,0.90)', borderColor: colors.border }, moodBannerStyle]}>
-          <Text style={[styles.moodTitle, { color: colors.text }]}>🌿 {t('home.howAreYou')}</Text>
+          <Text style={[styles.moodTitle, { color: colors.text }]}>{t('home.howAreYou')}</Text>
           <View style={styles.emojiContainer}>
             {MOODS.map(m => (
-              <EmojiButton key={m.value} emoji={m.emoji} onPress={() => handleMoodSelect(m.value)} />
+              <MoodIconButton 
+                key={m.value} 
+                level={m.value} 
+                isSelected={false} 
+                onPress={() => handleMoodSelect(m.value)} 
+              />
             ))}
           </View>
         </AnimatedView>
@@ -458,14 +467,14 @@ export default function HomeScreen({ navigation }: Props) {
         </View>
 
         {/* Custom Notification Scheduler Section */}
-        <SectionTitle title="🔔 Custom Alerts" color={colors.text} />
+        <SectionTitle title="Custom Alerts" color={colors.text} />
         <View style={[styles.customNotificationCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[styles.customNotificationSub, { color: colors.textMuted }]}>
-            Schedule a custom wellness alert or reminder to pop up after a delay.
+            Set a custom reminder. Choose between a one-time delay, an hourly nudge, or a daily repeating alert.
           </Text>
           <TextInput
             style={[styles.customNotificationInput, { backgroundColor: colors.surfaceAlt, color: colors.text, borderColor: colors.border }]}
-            placeholder="Notification Title (e.g. Time for water! 💧)"
+            placeholder="Notification Title (e.g. Time for water!)"
             placeholderTextColor={colors.textMuted}
             value={customTitle}
             onChangeText={setCustomTitle}
@@ -477,31 +486,134 @@ export default function HomeScreen({ navigation }: Props) {
             value={customBody}
             onChangeText={setCustomBody}
           />
-          
-          <Text style={{ fontFamily: typography.body, color: colors.text, fontSize: rf(14), marginTop: 8, marginBottom: 8 }}>
-            Pop up delay (seconds): {customDelay} seconds
+
+          {/* Mode Selector */}
+          <Text style={{ fontFamily: typography.label, color: colors.text, fontSize: rf(13), fontWeight: '700', marginTop: 4, marginBottom: 8 }}>
+            NOTIFICATION TYPE:
           </Text>
-          
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
-            {['5', '10', '30', '60', '300', '1800'].map(secs => (
+          <View style={{ flexDirection: 'row', gap: 6, marginBottom: 16 }}>
+            {[
+              { id: 'delay', label: 'One-time Delay' },
+              { id: 'hourly', label: 'Every Hour' },
+              { id: 'daily', label: 'Daily Alert' }
+            ].map(modeOpt => (
               <TouchableOpacity
-                key={secs}
-                onPress={() => setCustomDelay(secs)}
+                key={modeOpt.id}
+                onPress={() => {
+                  HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Light);
+                  setNotificationMode(modeOpt.id as any);
+                }}
                 style={{
-                  paddingHorizontal: 12,
-                  paddingVertical: 6,
+                  flex: 1,
+                  paddingVertical: 10,
                   borderRadius: 12,
-                  backgroundColor: customDelay === secs ? colors.accent : colors.surfaceAlt,
+                  backgroundColor: notificationMode === modeOpt.id ? colors.accent : colors.surfaceAlt,
                   borderWidth: 1,
-                  borderColor: colors.borderLight
+                  borderColor: colors.borderLight,
+                  alignItems: 'center'
                 }}
               >
-                <Text style={{ color: customDelay === secs ? 'white' : colors.text, fontSize: rf(12) }}>
-                  {secs === '300' ? '5 min' : secs === '1800' ? '30 min' : `${secs}s`}
+                <Text style={{ color: notificationMode === modeOpt.id ? 'white' : colors.text, fontSize: rf(11), fontWeight: 'bold' }}>
+                  {modeOpt.label}
                 </Text>
               </TouchableOpacity>
             ))}
           </View>
+
+          {/* Mode specific inputs */}
+          {notificationMode === 'delay' && (
+            <View>
+              <Text style={{ fontFamily: typography.body, color: colors.text, fontSize: rf(14), marginBottom: 8 }}>
+                Pop up delay: {customDelay} seconds
+              </Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
+                {['5', '10', '30', '60', '300', '1800'].map(secs => (
+                  <TouchableOpacity
+                    key={secs}
+                    onPress={() => setCustomDelay(secs)}
+                    style={{
+                      paddingHorizontal: 12,
+                      paddingVertical: 6,
+                      borderRadius: 12,
+                      backgroundColor: customDelay === secs ? colors.accent : colors.surfaceAlt,
+                      borderWidth: 1,
+                      borderColor: colors.borderLight
+                    }}
+                  >
+                    <Text style={{ color: customDelay === secs ? 'white' : colors.text, fontSize: rf(12) }}>
+                      {secs === '300' ? '5 min' : secs === '1800' ? '30 min' : `${secs}s`}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          )}
+
+          {notificationMode === 'hourly' && (
+            <View style={{ backgroundColor: colors.surfaceAlt, padding: 12, borderRadius: 12, borderWidth: 1, borderColor: colors.borderLight, marginBottom: 16 }}>
+              <Text style={{ fontFamily: typography.body, color: colors.text, fontSize: rf(13) }}>
+                This will nudge you every hour on the hour to take a breath, correct posture, or drink water.
+              </Text>
+            </View>
+          )}
+
+          {notificationMode === 'daily' && (
+            <View style={{ marginBottom: 16 }}>
+              <Text style={{ fontFamily: typography.body, color: colors.text, fontSize: rf(13), marginBottom: 8 }}>
+                Daily alert time: {dailyHour.padStart(2, '0')}:{dailyMinute.padStart(2, '0')}
+              </Text>
+              
+              <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontFamily: typography.label, fontSize: rf(11), color: colors.textMuted, marginBottom: 4 }}>HOUR (0-23)</Text>
+                  <TextInput
+                    style={[styles.customNotificationInput, { backgroundColor: colors.surfaceAlt, color: colors.text, borderColor: colors.border, textAlign: 'center', marginBottom: 0 }]}
+                    keyboardType="number-pad"
+                    maxLength={2}
+                    value={dailyHour}
+                    onChangeText={setDailyHour}
+                  />
+                </View>
+                <Text style={{ fontSize: rf(24), color: colors.text, marginTop: 16 }}>:</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontFamily: typography.label, fontSize: rf(11), color: colors.textMuted, marginBottom: 4 }}>MINUTE (0-59)</Text>
+                  <TextInput
+                    style={[styles.customNotificationInput, { backgroundColor: colors.surfaceAlt, color: colors.text, borderColor: colors.border, textAlign: 'center', marginBottom: 0 }]}
+                    keyboardType="number-pad"
+                    maxLength={2}
+                    value={dailyMinute}
+                    onChangeText={setDailyMinute}
+                  />
+                </View>
+              </View>
+
+              {/* Quick Hours */}
+              <View style={{ flexDirection: 'row', gap: 6, marginTop: 12 }}>
+                {[
+                  { label: '8 AM', h: '08' },
+                  { label: '12 PM', h: '12' },
+                  { label: '6 PM', h: '18' },
+                  { label: '9 PM', h: '21' }
+                ].map(item => (
+                  <TouchableOpacity
+                    key={item.h}
+                    onPress={() => setDailyHour(item.h)}
+                    style={{
+                      flex: 1,
+                      paddingVertical: 6,
+                      borderRadius: 10,
+                      backgroundColor: dailyHour === item.h ? colors.accent : colors.surfaceAlt,
+                      borderWidth: 1,
+                      borderColor: colors.borderLight,
+                      alignItems: 'center'
+                    }}
+                  >
+                    <Text style={{ color: dailyHour === item.h ? 'white' : colors.text, fontSize: rf(11) }}>{item.label}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          )}
 
           <TouchableOpacity
             style={{
@@ -514,21 +626,47 @@ export default function HomeScreen({ navigation }: Props) {
             }}
             onPress={async () => {
               HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Medium);
-              const delay = parseInt(customDelay, 10);
-              if (isNaN(delay) || delay <= 0) {
-                Alert.alert("Error", "Please specify a valid delay in seconds.");
-                return;
-              }
-              const titleVal = customTitle.trim() || "MindArc Reminder 🌿";
+              const titleVal = customTitle.trim() || "MindArc Reminder";
               const bodyVal = customBody.trim() || "Take a deep breath and check in.";
-              
-              const scheduledId = await NotificationController.scheduleCustomNotification(titleVal, bodyVal, delay);
-              if (scheduledId) {
-                Alert.alert("Scheduled Successfully", `Your custom alert will trigger in ${delay} seconds.`);
-                setCustomTitle('');
-                setCustomBody('');
-              } else {
-                Alert.alert("Error", "Could not schedule notification. Make sure permissions are granted.");
+
+              if (notificationMode === 'delay') {
+                const delay = parseInt(customDelay, 10);
+                if (isNaN(delay) || delay <= 0) {
+                  Alert.alert("Error", "Please specify a valid delay in seconds.");
+                  return;
+                }
+                const scheduledId = await NotificationController.scheduleCustomRecurringNotification(titleVal, bodyVal, 'delay', delay);
+                if (scheduledId) {
+                  Alert.alert("Scheduled Successfully", `Your custom alert will trigger in ${delay} seconds.`);
+                  setCustomTitle('');
+                  setCustomBody('');
+                } else {
+                  Alert.alert("Error", "Could not schedule notification.");
+                }
+              } else if (notificationMode === 'hourly') {
+                const scheduledId = await NotificationController.scheduleCustomRecurringNotification(titleVal, bodyVal, 'hourly');
+                if (scheduledId) {
+                  Alert.alert("Scheduled Successfully", "Hourly recurring notification has been registered.");
+                  setCustomTitle('');
+                  setCustomBody('');
+                } else {
+                  Alert.alert("Error", "Could not schedule notification.");
+                }
+              } else if (notificationMode === 'daily') {
+                const hr = parseInt(dailyHour, 10);
+                const mn = parseInt(dailyMinute, 10);
+                if (isNaN(hr) || hr < 0 || hr > 23 || isNaN(mn) || mn < 0 || mn > 59) {
+                  Alert.alert("Error", "Please input a valid hour (0-23) and minute (0-59).");
+                  return;
+                }
+                const scheduledId = await NotificationController.scheduleCustomRecurringNotification(titleVal, bodyVal, 'daily', undefined, hr, mn);
+                if (scheduledId) {
+                  Alert.alert("Scheduled Successfully", `Daily reminder scheduled repeating at ${dailyHour.padStart(2, '0')}:${dailyMinute.padStart(2, '0')}.`);
+                  setCustomTitle('');
+                  setCustomBody('');
+                } else {
+                  Alert.alert("Error", "Could not schedule notification.");
+                }
               }
             }}
           >
@@ -573,9 +711,10 @@ const SectionTitle = ({ title, color }: { title: string, color: string }) => (
   </Text>
 );
 
-const EmojiButton = ({ emoji, onPress }: { emoji: string, onPress: () => void }) => {
+const MoodIconButton = ({ level, onPress, isSelected }: { level: number, onPress: () => void, isSelected: boolean }) => {
   const scale = useSharedValue(1);
   const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  const { colors } = useTheme();
   
   return (
     <TouchableWithoutFeedback
@@ -583,8 +722,8 @@ const EmojiButton = ({ emoji, onPress }: { emoji: string, onPress: () => void })
       onPressOut={() => { scale.value = withSpring(1); }}
       onPress={onPress}
     >
-      <AnimatedView style={[styles.emojiOuter, animatedStyle]}>
-        <Text style={styles.emojiText}>{emoji}</Text>
+      <AnimatedView style={[styles.emojiOuter, animatedStyle, isSelected && { backgroundColor: colors.accentSoft }]}>
+        <MoodIcon level={level} size={32} color={isSelected ? colors.accent : colors.textMuted} />
       </AnimatedView>
     </TouchableWithoutFeedback>
   );

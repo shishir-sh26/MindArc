@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
+import { HapticFeedback } from '../../utils/HapticFeedback';
 import * as Haptics from 'expo-haptics';
 
 type Props = {
@@ -24,7 +25,7 @@ export default function LearnScreen({ navigation }: Props) {
 
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    HapticFeedback.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     // Simulate brief network refresh
     await new Promise(resolve => setTimeout(resolve, 800));
     setRefreshing(false);
@@ -98,6 +99,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     marginTop: spacing.xs,
+    textShadowColor: '#000000',
+    textShadowOffset: { width: -1.2, height: 1.2 },
+    textShadowRadius: 2.2,
   },
   listContent: {
     padding: spacing.lg,

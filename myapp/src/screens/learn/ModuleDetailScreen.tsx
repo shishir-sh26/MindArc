@@ -8,7 +8,7 @@ import { RouteProp, useRoute, useNavigation } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/types';
 import Animated, { useSharedValue, useAnimatedStyle, useAnimatedProps, withTiming, withSpring, withDelay, withRepeat, withSequence, interpolateColor, interpolate, runOnJS, Easing, FadeInDown } from 'react-native-reanimated';
 import Svg, { Rect, Circle, Path, G } from 'react-native-svg';
-import * as HapticsAPI from 'expo-haptics';
+import { HapticFeedback as HapticsAPI } from '../../utils/HapticFeedback';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -18,6 +18,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 const AnimatedView = Animated.createAnimatedComponent(View);
+import { PlantStageSvg, BalloonSvg } from '../../components/relax/RelievingGames';
 
 type ModuleDetailRouteProp = RouteProp<RootStackParamList, 'ModuleDetail'>;
 
@@ -751,11 +752,11 @@ const ZenSproutGame = () => {
   const scale = useSharedValue(1);
 
   const stages = [
-    { label: 'Seed in Soil 🟤', emoji: '🟤', hint: 'Give it water to sprout' },
-    { label: 'Baby Sprout 🌱', emoji: '🌱', hint: 'Keep watering to grow leaves' },
-    { label: 'Budding Leaf 🌿', emoji: '🌿', hint: 'Almost ready to bloom' },
-    { label: 'Blooming Flower 🌸', emoji: '🌸', hint: 'Beautiful! Garden is healthy!' },
-    { label: 'Golden Lotus 🪷', emoji: '🪷', hint: 'Fully grown. Tap reset to start over.' },
+    { label: 'Seed in Soil', hint: 'Give it water to sprout' },
+    { label: 'Baby Sprout', hint: 'Keep watering to grow leaves' },
+    { label: 'Budding Leaf', hint: 'Almost ready to bloom' },
+    { label: 'Blooming Flower', hint: 'Beautiful! Garden is healthy!' },
+    { label: 'Golden Lotus', hint: 'Fully grown. Tap reset to start over.' },
   ];
 
   const currentStageIdx = Math.min(Math.floor(taps / 4), stages.length - 1);
@@ -784,7 +785,7 @@ const ZenSproutGame = () => {
   return (
     <View style={{ alignItems: 'center', paddingVertical: 10 }}>
       <Animated.View style={[{ width: 80, height: 80, alignItems: 'center', justifyContent: 'center', marginVertical: hp(1) }, animatedStyle]}>
-        <Text style={{ fontSize: rf(54) }}>{currentStage.emoji}</Text>
+        <PlantStageSvg stage={currentStageIdx} size={80} colors={colors} />
       </Animated.View>
       <Text style={{ fontFamily: typography.label, color: colors.text, fontSize: rf(16), fontWeight: 'bold' }}>
         {currentStage.label}
@@ -871,7 +872,7 @@ const BalloonReleaseGame = () => {
       {!isReleased ? (
         <View style={{ width: '100%', alignItems: 'center' }}>
           <View style={{ width: 70, height: 70, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontSize: rf(48) }}>🎈</Text>
+            <BalloonSvg size={70} color="#EF4444" />
           </View>
           <TextInput
             style={{
@@ -913,7 +914,7 @@ const BalloonReleaseGame = () => {
             <View style={{ padding: 8, backgroundColor: 'rgba(239, 68, 68, 0.9)', borderRadius: 10, marginBottom: 4 }}>
               <Text style={{ color: 'white', fontSize: rf(12), fontFamily: typography.mono, fontWeight: 'bold' }}>{text}</Text>
             </View>
-            <Text style={{ fontSize: rf(48) }}>🎈</Text>
+            <BalloonSvg size={70} color="#EF4444" />
           </Animated.View>
           
           <Text style={{ fontFamily: typography.body, color: colors.text, fontSize: rf(14), fontStyle: 'italic', marginTop: hp(4), textAlign: 'center' }}>
@@ -947,7 +948,7 @@ const RelievingGames = () => {
     <View style={{ marginTop: hp(6), paddingBottom: hp(4) }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: hp(1) }}>
         <Text style={[styles.tipsTitle, { color: colors.text, marginBottom: 0 }]}>
-          {t('learn.sim.gamesTitle', { defaultValue: "🕹️ Relieving Games" })}
+          {t('learn.sim.gamesTitle', { defaultValue: "Relieving Games" })}
         </Text>
         <TouchableOpacity onPress={() => setShowGamesInfo(!showGamesInfo)} style={{ padding: 4 }}>
           <Ionicons name={showGamesInfo ? "close-circle-outline" : "help-circle-outline"} size={22} color={colors.accent} />
@@ -994,7 +995,7 @@ const RelievingGames = () => {
 
       {/* 3. Zen Sprout Garden Game */}
       <View style={[simStyles.container, { marginBottom: hp(3), backgroundColor: colors.surface, borderColor: colors.border }]}>
-        <Text style={[simStyles.title, { color: colors.text, marginBottom: hp(1) }]}>🌱 Zen Sprout Garden</Text>
+        <Text style={[simStyles.title, { color: colors.text, marginBottom: hp(1) }]}>Zen Sprout Garden</Text>
         <ZenSproutGame />
         <Text style={[simStyles.desc, { color: colors.textMuted, marginTop: hp(1) }]}>
           Tap the watering can to nurture the sprout. Watch it grow and bloom!
@@ -1003,7 +1004,7 @@ const RelievingGames = () => {
 
       {/* 4. Thought Balloon Release Game */}
       <View style={[simStyles.container, { marginBottom: hp(3), backgroundColor: colors.surface, borderColor: colors.border }]}>
-        <Text style={[simStyles.title, { color: colors.text, marginBottom: hp(1) }]}>🎈 Thought Balloon Release</Text>
+        <Text style={[simStyles.title, { color: colors.text, marginBottom: hp(1) }]}>Thought Balloon Release</Text>
         <BalloonReleaseGame />
         <Text style={[simStyles.desc, { color: colors.textMuted, marginTop: hp(1) }]}>
           Write a negative thought inside the balloon and tap release to set it free.
@@ -1199,7 +1200,7 @@ export default function ModuleDetailScreen() {
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
-      <Text style={[styles.title, { color: '#FFFFFF' }]}>{translatedTitle}</Text>
+      <Text style={[styles.title, { color: colors.text }]}>{translatedTitle}</Text>
       
       <View style={[styles.meta, { backgroundColor: colors.surfaceAlt, borderColor: colors.borderLight }]}>
         <Text style={[styles.metaText, { color: colors.accentDeep }]}>{translatedCategory.toUpperCase()}</Text>
@@ -1227,9 +1228,23 @@ export default function ModuleDetailScreen() {
             {sec.tips && sec.tips.map((tip: string, tIdx: number) => {
               const translatedSecTip = t(`learn.modules.m${module.id}.sections.s${sIdx}.tips.${tIdx}`, { defaultValue: tip });
               return (
-                <View key={tIdx} style={[styles.tipCard, { backgroundColor: isDark ? 'rgba(93, 191, 110, 0.1)' : 'rgba(90, 156, 58, 0.08)', borderLeftWidth: 4, borderLeftColor: colors.accent, marginTop: hp(1.5), marginBottom: 0, shadowOpacity: 0 }]}>
-                  <Ionicons name="bulb-outline" size={16} color={colors.accent} style={{ marginRight: spacing.sm, marginTop: 2 }} />
-                  <Text style={[styles.tipText, { color: colors.text, fontSize: rf(14), fontWeight: '600' }]}>{translatedSecTip}</Text>
+                <View key={tIdx} style={[
+                  styles.highlightedTipCard,
+                  {
+                    backgroundColor: isDark ? 'rgba(93, 191, 110, 0.15)' : 'rgba(90, 156, 58, 0.12)',
+                    borderColor: colors.accent,
+                    borderLeftColor: colors.accentDeep || colors.accent,
+                  }
+                ]}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+                    <Ionicons name="bulb" size={20} color={colors.accentDeep || colors.accent} style={{ marginRight: 8 }} />
+                    <Text style={{ fontFamily: typography.display, fontWeight: '800', fontSize: rf(13), color: colors.accentDeep || colors.accent, letterSpacing: 0.5 }}>
+                      PRACTICAL INSIGHT
+                    </Text>
+                  </View>
+                  <Text style={[styles.tipText, { color: colors.text, fontSize: rf(15), fontWeight: '700', lineHeight: rf(22) }]}>
+                    {translatedSecTip}
+                  </Text>
                 </View>
               );
             })}
@@ -1294,12 +1309,19 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: typography.display,
     fontSize: rf(32),
-    fontWeight: '800',
-    color: '#FFFFFF',
-    textShadowColor: '#000000',
-    textShadowOffset: { width: -1.5, height: 1.5 },
-    textShadowRadius: 2.5,
+    fontWeight: '600',
     marginBottom: hp(2),
+  },
+  highlightedTipCard: {
+    padding: hp(2.2),
+    borderRadius: radii.md,
+    borderWidth: 1.5,
+    borderLeftWidth: 6,
+    marginVertical: hp(1.5),
+    shadowColor: '#3A6E20',
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   meta: {
     flexDirection: 'row',

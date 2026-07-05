@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-nati
 import { ForestBackground } from '../../components/common/ForestBackground';
 import { useTheme } from '../../hooks/useTheme';
 import { spacing } from '../../../theme/spacing';
+import { typography } from '../../../theme/typography';
 import { Ionicons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import { useTranslation } from 'react-i18next';
@@ -131,6 +132,7 @@ const styles = StyleSheet.create({
   content: { padding: spacing.lg, paddingBottom: 100 },
   header: { marginBottom: spacing.xl, marginTop: spacing.md },
   title: {
+    fontFamily: typography.display,
     fontSize: 28,
     fontWeight: 'bold',
     color: '#FFFFFF',
@@ -138,7 +140,15 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: -1.5, height: 1.5 },
     textShadowRadius: 2.5,
   },
-  subtitle: { fontSize: 16, fontWeight: '700', marginTop: spacing.xs },
+  subtitle: {
+    fontFamily: typography.display,
+    fontSize: 16,
+    fontWeight: '700',
+    marginTop: spacing.xs,
+    textShadowColor: '#000000',
+    textShadowOffset: { width: -1.2, height: 1.2 },
+    textShadowRadius: 2.2,
+  },
   grid: { 
     flexDirection: 'row', 
     flexWrap: 'wrap', 

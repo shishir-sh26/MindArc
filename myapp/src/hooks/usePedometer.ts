@@ -1,79 +1,56 @@
 import { useEffect } from 'react';
-import { Pedometer, Accelerometer } from 'expo-sensors';
+import { Accelerometer } from 'expo-sensors';
 import { useActivityStore } from '../store/activityStore';
+import { StepDetector } from '../utils/StepDetector';
 
 export const usePedometer = () => {
   const { 
     addSteps, 
     checkMidnightReset, 
-    isPedometerAvailable, 
     setPedometerAvailable 
   } = useActivityStore();
 
   useEffect(() => {
     checkMidnightReset();
-    let pedometerSub: Pedometer.Subscription | undefined;
     let accelSub: { remove: () => void } | undefined;
 
-    const setupPedometer = async () => {
+    const setupStepTracker = async () => {
       try {
-        const { status } = await Pedometer.requestPermissionsAsync();
-        if (status !== 'granted') {
-          setPedometerAvailable('denied');
-          setupAccelerometerFallback();
-          return;
-        }
-
-        const isAvailable = await Pedometer.isAvailableAsync();
-        setPedometerAvailable(String(isAvailable));
+        const isAvailable = await Accelerometer.isAvailableAsync();
+        setPedometerAvailable(isAvailable ? 'available' : 'unavailable');
 
         if (isAvailable) {
-          pedometerSub = Pedometer.watchStepCount(result => {
-            if (result && result.steps) {
-              addSteps(result.steps);
-            }
+          console.log('DSP Accelerometer steps engine starting at 50Hz (20ms interval)...');
+          
+          // Configure Accelerometer update interval to 20ms (50Hz)
+          Accelerometer.setUpdateInterval(20);
+
+          const detector = new StepDetector((stepsCount) => {
+            addSteps(stepsCount);
+          });
+
+          accelSub = Accelerometer.addListener(data => {
+            const { x, y, z } = data;
+            // Process sample through DSP and rhythm state machine
+            detector.processSample(x, y, z, Date.now());
           });
         } else {
-          setupAccelerometerFallback();
+          console.warn('Accelerometer is not available on this device.');
         }
       } catch (error) {
         setPedometerAvailable('error');
-        console.warn('Pedometer failed to initialize, falling back:', error);
-        setupAccelerometerFallback();
+        console.error('Failed to initialize DSP step tracker:', error);
       }
     };
 
-    const setupAccelerometerFallback = () => {
-      console.log('Accelerometer fallback steps engine active...');
-      let lastStepTime = 0;
-      
-      accelSub = Accelerometer.addListener(data => {
-        const { x, y, z } = data;
-        const magnitude = Math.sqrt(x * x + y * y + z * z);
-        const now = Date.now();
-
-        // 1.55 G is typical peak force for a physical walking step, debounced by 450ms.
-        // This filters out minor twitches/shakes and only scans actual footsteps.
-        if (magnitude > 1.55 && now - lastStepTime > 450) {
-          lastStepTime = now;
-          addSteps(1);
-        }
-      });
-
-      Accelerometer.setUpdateInterval(100);
-    };
-
-    setupPedometer();
+    setupStepTracker();
 
     return () => {
-      if (pedometerSub && pedometerSub.remove) {
-        pedometerSub.remove();
-      }
       if (accelSub && accelSub.remove) {
         accelSub.remove();
       }
     };
   }, []);
 
-  return { isPedometerAvailable };
+  return { isPedometerAvailable: 'available' };
 };

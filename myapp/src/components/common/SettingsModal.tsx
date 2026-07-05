@@ -26,7 +26,7 @@ export const SettingsModal = ({ visible, onClose, onNavigateToUserDetails }: Set
   const { t } = useTranslation();
   const { colors, isDark, toggleTheme } = useTheme();
   const { user } = useAuthStore();
-  const { profile, setProfile } = useUserStore();
+  const { profile, setProfile, vibrationEnabled, setVibrationEnabled } = useUserStore();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const [profileName, setProfileName] = useState('');
@@ -252,7 +252,7 @@ export const SettingsModal = ({ visible, onClose, onNavigateToUserDetails }: Set
 
                     <View style={styles.infoGrid}>
                       <View style={[styles.gridItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                        <Text style={styles.gridItemIcon}>🎂</Text>
+                        <Ionicons name="calendar-outline" size={20} color={colors.accent} />
                         <View style={{ flex: 1 }}>
                           <Text style={[styles.gridItemLabel, { color: colors.textMuted }]}>Age</Text>
                           <Text style={[styles.gridItemValue, { color: colors.text }]} numberOfLines={1}>
@@ -262,7 +262,7 @@ export const SettingsModal = ({ visible, onClose, onNavigateToUserDetails }: Set
                       </View>
 
                       <View style={[styles.gridItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                        <Text style={styles.gridItemIcon}>👤</Text>
+                        <Ionicons name="person-outline" size={20} color={colors.accent} />
                         <View style={{ flex: 1 }}>
                           <Text style={[styles.gridItemLabel, { color: colors.textMuted }]}>Gender</Text>
                           <Text style={[styles.gridItemValue, { color: colors.text }]} numberOfLines={1}>
@@ -272,7 +272,7 @@ export const SettingsModal = ({ visible, onClose, onNavigateToUserDetails }: Set
                       </View>
 
                       <View style={[styles.gridItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                        <Text style={styles.gridItemIcon}>🔥</Text>
+                        <Ionicons name="footsteps-outline" size={20} color={colors.accent} />
                         <View style={{ flex: 1 }}>
                           <Text style={[styles.gridItemLabel, { color: colors.textMuted }]}>Steps Goal</Text>
                           <Text style={[styles.gridItemValue, { color: colors.text }]} numberOfLines={1}>
@@ -282,7 +282,7 @@ export const SettingsModal = ({ visible, onClose, onNavigateToUserDetails }: Set
                       </View>
 
                       <View style={[styles.gridItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-                        <Text style={styles.gridItemIcon}>🎯</Text>
+                        <Ionicons name="locate-outline" size={20} color={colors.accent} />
                         <View style={{ flex: 1 }}>
                           <Text style={[styles.gridItemLabel, { color: colors.textMuted }]}>Focus Area</Text>
                           <Text style={[styles.gridItemValue, { color: colors.text }]} numberOfLines={1}>
@@ -340,7 +340,22 @@ export const SettingsModal = ({ visible, onClose, onNavigateToUserDetails }: Set
               </TouchableOpacity>
             </View>
 
-            {/* Language Section */}
+            {/* Haptic Vibration Section */}
+            <Text style={[styles.sectionTitle, { color: colors.textMuted, marginTop: spacing.xl }]}>Haptic Vibration</Text>
+            <View style={styles.buttonRow}>
+              <TouchableOpacity 
+                style={[styles.optionBtn, vibrationEnabled ? { backgroundColor: colors.accent, borderColor: colors.accent } : { backgroundColor: colors.surface, borderColor: colors.border }]}
+                onPress={() => setVibrationEnabled(true)}
+              >
+                <Text style={[styles.optionText, vibrationEnabled ? { color: '#fff' } : { color: colors.text }]}>Vibration On</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.optionBtn, !vibrationEnabled ? { backgroundColor: colors.accent, borderColor: colors.accent } : { backgroundColor: colors.surface, borderColor: colors.border }]}
+                onPress={() => setVibrationEnabled(false)}
+              >
+                <Text style={[styles.optionText, !vibrationEnabled ? { color: '#fff' } : { color: colors.text }]}>Vibration Off</Text>
+              </TouchableOpacity>
+            </View>
             <Text style={[styles.sectionTitle, { color: colors.textMuted, marginTop: spacing.xl }]}>{t('settings.language')}</Text>
             <View style={styles.buttonRow}>
               <TouchableOpacity 

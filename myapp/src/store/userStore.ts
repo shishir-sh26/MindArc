@@ -15,7 +15,9 @@ export interface UserProfile {
 
 interface UserState {
   profile: UserProfile;
+  vibrationEnabled: boolean;
   setProfile: (profile: Partial<UserProfile>) => void;
+  setVibrationEnabled: (enabled: boolean) => void;
   clearProfile: () => void;
 }
 
@@ -34,10 +36,12 @@ export const useUserStore = create<UserState>()(
   persist(
     (set) => ({
       profile: DEFAULT_PROFILE,
+      vibrationEnabled: true,
       setProfile: (profileUpdates) => set((state) => ({
         profile: { ...state.profile, ...profileUpdates }
       })),
-      clearProfile: () => set({ profile: DEFAULT_PROFILE }),
+      setVibrationEnabled: (enabled) => set({ vibrationEnabled: enabled }),
+      clearProfile: () => set({ profile: DEFAULT_PROFILE, vibrationEnabled: true }),
     }),
     {
       name: 'mindspace-user-storage',

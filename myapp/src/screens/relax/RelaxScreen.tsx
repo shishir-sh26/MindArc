@@ -3,13 +3,16 @@ import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native
 import { ForestBackground } from '../../components/common/ForestBackground';
 import { useTheme } from '../../hooks/useTheme';
 import { Card } from '../../components/common/Card';
-import { spacing } from '../../../theme/spacing';
+import { spacing, radii } from '../../../theme/spacing';
+import { typography } from '../../../theme/typography';
+import { wp, hp, rf } from '../../utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList, BottomTabParamList } from '../../navigation/types';
 import { CompositeNavigationProp } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import { HapticFeedback } from '../../utils/HapticFeedback';
 import * as Haptics from 'expo-haptics';
 
 type RelaxNavigationProp = CompositeNavigationProp<
@@ -28,7 +31,7 @@ export default function RelaxScreen({ navigation }: Props) {
 
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    HapticFeedback.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     await new Promise(resolve => setTimeout(resolve, 800));
     setRefreshing(false);
   }, []);
@@ -48,44 +51,62 @@ export default function RelaxScreen({ navigation }: Props) {
           />
         }
       >
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: '#FFFFFF' }]}>{t('relax.title')}</Text>
-        <Text style={[styles.subtitle, { color: '#F4F9F4' }]}>
-          {t('relax.subtitle')}
-        </Text>
-      </View>
-
-      <Card 
-        style={styles.card} 
-        onPress={() => navigation.navigate('Breathing')}
-      >
-        <View style={[styles.iconContainer, { backgroundColor: colors.accentSoft }]}>
-          <Ionicons name="medical-outline" size={32} color={colors.accent} />
-        </View>
-        <View style={styles.textContainer}>
-          <Text style={[styles.cardTitle, { color: colors.text }]}>{t('relax.boxBreathing')}</Text>
-          <Text style={[styles.cardSub, { color: colors.textMuted }]}>
-            {t('relax.boxBreathingSub')}
+        <View style={styles.header}>
+          <Text style={[styles.title, { color: '#FFFFFF' }]}>{t('relax.title')}</Text>
+          <Text style={[styles.subtitle, { color: '#F4F9F4' }]}>
+            {t('relax.subtitle')}
           </Text>
         </View>
-        <Ionicons name="chevron-forward" size={24} color={colors.textMuted} />
-      </Card>
 
-      <Card 
-        style={styles.card} 
-        onPress={() => navigation.navigate('NatureSounds')}
-      >
-        <View style={[styles.iconContainer, { backgroundColor: '#E0F2FE' }]}>
-          <Ionicons name="musical-notes-outline" size={32} color={colors.accentBlue} />
-        </View>
-        <View style={styles.textContainer}>
-          <Text style={[styles.cardTitle, { color: colors.text }]}>{t('relax.natureSounds')}</Text>
-          <Text style={[styles.cardSub, { color: colors.textMuted }]}>
-            {t('relax.natureSoundsSub')}
-          </Text>
-        </View>
-        <Ionicons name="chevron-forward" size={24} color={colors.textMuted} />
-      </Card>
+        <Card 
+          style={styles.card} 
+          onPress={() => navigation.navigate('Breathing')}
+        >
+          <View style={[styles.iconContainer, { backgroundColor: colors.accentSoft }]}>
+            <Ionicons name="medical-outline" size={32} color={colors.accent} />
+          </View>
+          <View style={styles.textContainer}>
+            <Text style={[styles.cardTitle, { color: colors.text }]}>{t('relax.boxBreathing')}</Text>
+            <Text style={[styles.cardSub, { color: colors.textMuted }]}>
+              {t('relax.boxBreathingSub')}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={24} color={colors.textMuted} />
+        </Card>
+
+        <Card 
+          style={styles.card} 
+          onPress={() => navigation.navigate('NatureSounds')}
+        >
+          <View style={[styles.iconContainer, { backgroundColor: '#E0F2FE' }]}>
+            <Ionicons name="musical-notes-outline" size={32} color={colors.accentBlue} />
+          </View>
+          <View style={styles.textContainer}>
+            <Text style={[styles.cardTitle, { color: colors.text }]}>{t('relax.natureSounds')}</Text>
+            <Text style={[styles.cardSub, { color: colors.textMuted }]}>
+              {t('relax.natureSoundsSub')}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={24} color={colors.textMuted} />
+        </Card>
+
+        <Card 
+          style={styles.card} 
+          onPress={() => navigation.navigate('RelievingGames')}
+        >
+          <View style={[styles.iconContainer, { backgroundColor: '#F3E8FF' }]}>
+            <Ionicons name="game-controller-outline" size={32} color="#A855F7" />
+          </View>
+          <View style={styles.textContainer}>
+            <Text style={[styles.cardTitle, { color: colors.text }]}>
+              {t('relax.gamesTitle', { defaultValue: "Relieving Games" })}
+            </Text>
+            <Text style={[styles.cardSub, { color: colors.textMuted }]}>
+              {t('relax.gamesSubtitle', { defaultValue: "Interactive games to ground you and ease anxiety." })}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={24} color={colors.textMuted} />
+        </Card>
       </ScrollView>
     </View>
   );
@@ -102,12 +123,13 @@ const styles = StyleSheet.create({
   content: {
     padding: spacing.lg,
     paddingTop: spacing.xxl,
-    paddingBottom: 100, // padding for floating nav bar
+    paddingBottom: 120, // extra padding for floating nav bar
   },
   header: {
     marginBottom: spacing.xl,
   },
   title: {
+    fontFamily: typography.display,
     fontSize: 28,
     fontWeight: 'bold',
     color: '#FFFFFF',
@@ -116,9 +138,13 @@ const styles = StyleSheet.create({
     textShadowRadius: 2.5,
   },
   subtitle: {
+    fontFamily: typography.display,
     fontSize: 16,
     fontWeight: '700',
     marginTop: spacing.xs,
+    textShadowColor: '#000000',
+    textShadowOffset: { width: -1.2, height: 1.2 },
+    textShadowRadius: 2.2,
   },
   card: {
     flexDirection: 'row',
@@ -139,8 +165,9 @@ const styles = StyleSheet.create({
     paddingRight: spacing.sm,
   },
   cardTitle: {
+    fontFamily: typography.display,
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: '800',
     marginBottom: 4,
   },
   cardSub: {

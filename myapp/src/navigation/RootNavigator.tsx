@@ -19,6 +19,7 @@ import ThoughtDiaryScreen from '../screens/thoughtDiary/ThoughtDiaryScreen';
 import NewThoughtEntryScreen from '../screens/thoughtDiary/NewThoughtEntryScreen';
 import BreathingScreen from '../screens/relax/BreathingScreen';
 import NatureSoundsScreen from '../screens/relax/NatureSoundsScreen';
+import RelievingGamesScreen from '../screens/relax/RelievingGamesScreen';
 import YogaPlayerScreen from '../screens/activity/YogaPlayerScreen';
 import CrisisScreen from '../screens/crisis/CrisisScreen';
 import UserDetailsScreen from '../screens/profile/UserDetailsScreen';
@@ -71,6 +72,7 @@ export const RootNavigator = () => {
               <Stack.Screen name="NewThoughtEntry" component={NewThoughtEntryScreen} options={{ title: 'New Entry', presentation: 'modal' }} />
               <Stack.Screen name="Breathing" component={BreathingScreen} options={{ title: 'Box Breathing' }} />
               <Stack.Screen name="NatureSounds" component={NatureSoundsScreen} options={{ title: 'Nature Sounds' }} />
+              <Stack.Screen name="RelievingGames" component={RelievingGamesScreen} options={{ title: 'Relieving Games' }} />
               <Stack.Screen name="YogaPlayer" component={YogaPlayerScreen} options={({ route }) => ({ title: route.params.title })} />
               <Stack.Screen name="Crisis" component={CrisisScreen} options={{ title: 'Emergency Contacts', presentation: 'modal' }} />
               <Stack.Screen name="UserDetails" component={UserDetailsScreen} options={{ headerShown: false }} />

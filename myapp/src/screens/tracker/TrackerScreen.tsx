@@ -15,6 +15,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList, BottomTabParamList } from '../../navigation/types';
 import { CompositeNavigationProp, useIsFocused } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import Svg, { Circle, Path } from 'react-native-svg';
 
 type TrackerNavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<BottomTabParamList, 'Track'>,
@@ -26,12 +27,64 @@ type Props = {
 };
 
 const MOODS = [
-  { level: 1, emoji: '😢', label: 'Sad' },
-  { level: 2, emoji: '😟', label: 'Anxious' },
-  { level: 3, emoji: '😐', label: 'Neutral' },
-  { level: 4, emoji: '🙂', label: 'Calm' },
-  { level: 5, emoji: '😁', label: 'Happy' },
+  { level: 1, label: 'Sad' },
+  { level: 2, label: 'Anxious' },
+  { level: 3, label: 'Neutral' },
+  { level: 4, label: 'Calm' },
+  { level: 5, label: 'Happy' },
 ];
+
+export const MoodIcon = ({ level, size = 32, color = '#5A9C3A' }: { level: number, size?: number, color?: string }) => {
+  switch (level) {
+    case 1: // Sad
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth="2" />
+          <Circle cx="9" cy="9" r="1.5" fill={color} />
+          <Circle cx="15" cy="9" r="1.5" fill={color} />
+          <Path d="M8 17C8 17 9 15 12 15C15 15 16 17 16 17" stroke={color} strokeWidth="2" strokeLinecap="round" />
+        </Svg>
+      );
+    case 2: // Anxious
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth="2" />
+          <Circle cx="9" cy="9" r="1.5" fill={color} />
+          <Circle cx="15" cy="9" r="1.5" fill={color} />
+          <Path d="M8 15.5C9 14.5 10 16.5 12 15.5C14 14.5 15 16.5 16 15.5" stroke={color} strokeWidth="2" strokeLinecap="round" />
+        </Svg>
+      );
+    case 3: // Neutral
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth="2" />
+          <Circle cx="9" cy="9" r="1.5" fill={color} />
+          <Circle cx="15" cy="9" r="1.5" fill={color} />
+          <Path d="M8 15H16" stroke={color} strokeWidth="2" strokeLinecap="round" />
+        </Svg>
+      );
+    case 4: // Calm / Content
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth="2" />
+          <Path d="M8 9.5C8.5 10.5 9.5 10.5 10 9.5" stroke={color} strokeWidth="2" strokeLinecap="round" />
+          <Path d="M14 9.5C14.5 10.5 15.5 10.5 16 9.5" stroke={color} strokeWidth="2" strokeLinecap="round" />
+          <Path d="M9 15C9.5 16 14.5 16 15 15" stroke={color} strokeWidth="2" strokeLinecap="round" />
+        </Svg>
+      );
+    case 5: // Happy
+      return (
+        <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+          <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth="2" />
+          <Circle cx="9" cy="9" r="1.5" fill={color} />
+          <Circle cx="15" cy="9" r="1.5" fill={color} />
+          <Path d="M8 14C8 14 9.5 17 12 17C14.5 17 16 14 16 14" stroke={color} strokeWidth="2" strokeLinecap="round" />
+        </Svg>
+      );
+    default:
+      return null;
+  }
+};
 
 const SYMPTOMS_LIST = [
   'Headache', 'Fatigue', 'Restlessness', 'Frustration', 'Anxiety', 'Nausea'
@@ -222,7 +275,11 @@ export default function TrackerScreen({ navigation }: Props) {
                 { backgroundColor: moodLevel === m.level ? colors.accentSoft : colors.surfaceAlt }
               ]}
             >
-              <Text style={styles.moodEmoji}>{m.emoji}</Text>
+              <MoodIcon 
+                level={m.level} 
+                size={34} 
+                color={moodLevel === m.level ? colors.accent : colors.textMuted} 
+              />
             </TouchableOpacity>
           ))}
         </View>

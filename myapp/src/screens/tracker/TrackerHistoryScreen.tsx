@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { auth } from '../../utils/firebase';
 import { syncUserDataFromFirestore } from '../../utils/syncService';
 import { syncStreakData } from '../../utils/streakService';
+import { HapticFeedback } from '../../utils/HapticFeedback';
 import * as Haptics from 'expo-haptics';
 
 export default function TrackerHistoryScreen() {
@@ -22,7 +23,7 @@ export default function TrackerHistoryScreen() {
 
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    HapticFeedback.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     const user = auth.currentUser;
     if (user) {
       try {
@@ -160,20 +161,25 @@ export default function TrackerHistoryScreen() {
             <Card style={styles.streakCard}>
               <View style={styles.streakHeader}>
                 <View>
-                  <Text style={[styles.streakNumberText, { color: streakBroken ? '#EF4444' : colors.text }]}>
-                    {streakBroken ? 0 : streak} 🔥
-                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Text style={[styles.streakNumberText, { color: streakBroken ? '#EF4444' : colors.text }]}>
+                      {streakBroken ? 0 : streak}
+                    </Text>
+                    <Ionicons name="flame-outline" size={24} color={streakBroken ? '#EF4444' : colors.accent} />
+                  </View>
                   <Text style={[styles.streakSubtitle, { color: colors.textMuted }]}>
                     {streakBroken ? 'Streak broken. Log entry today!' : 'Consecutive days active'}
                   </Text>
                 </View>
                 {streakBroken ? (
-                  <View style={[styles.streakStatusBadge, { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.15)' : 'rgba(239, 68, 68, 0.1)' }]}>
-                    <Text style={{ color: '#EF4444', fontWeight: 'bold', fontSize: 12 }}>Broken 💔</Text>
+                  <View style={[styles.streakStatusBadge, { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.15)' : 'rgba(239, 68, 68, 0.1)', flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
+                    <Ionicons name="heart-dislike" size={14} color="#EF4444" />
+                    <Text style={{ color: '#EF4444', fontWeight: 'bold', fontSize: 12 }}>Broken</Text>
                   </View>
                 ) : (
-                  <View style={[styles.streakStatusBadge, { backgroundColor: isDark ? 'rgba(77, 191, 122, 0.15)' : 'rgba(77, 191, 122, 0.1)' }]}>
-                    <Text style={{ color: colors.accent, fontWeight: 'bold', fontSize: 12 }}>Active 👍</Text>
+                  <View style={[styles.streakStatusBadge, { backgroundColor: isDark ? 'rgba(77, 191, 122, 0.15)' : 'rgba(77, 191, 122, 0.1)', flexDirection: 'row', alignItems: 'center', gap: 4 }]}>
+                    <Ionicons name="checkmark-circle" size={14} color={colors.accent} />
+                    <Text style={{ color: colors.accent, fontWeight: 'bold', fontSize: 12 }}>Active</Text>
                   </View>
                 )}
               </View>

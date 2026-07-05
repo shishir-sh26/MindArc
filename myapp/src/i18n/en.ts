@@ -482,12 +482,12 @@ export const en = {
   },
   navigation: {
     tooltips: {
-      home: "Home: Quick Check-in & Calm Tools 🏡",
-      learn: "Learn: Mindful Reading & Mental Health 📚",
-      track: "Track: Mood, Symptoms & Sleep Logs 📊",
-      thoughtDiary: "Thought Diary: CBT Cognitive Restructuring 🧠",
-      relax: "Relax: Nature Sounds & Ambient Breathing 🌿",
-      activity: "Activity: Daily Footsteps & Sensor Sandbox 🏃‍♂️"
+      home: "Home: Quick Check-in & Calm Tools",
+      learn: "Learn: Mindful Reading & Mental Health",
+      track: "Track: Mood, Symptoms & Sleep Logs",
+      thoughtDiary: "Thought Diary: CBT Cognitive Restructuring",
+      relax: "Relax: Nature Sounds & Ambient Breathing",
+      activity: "Activity: Daily Footsteps & Sensor Sandbox"
     }
   }
 };
