@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, FlatList, RefreshControl } from 'react-native';
 import { ForestBackground } from '../../components/common/ForestBackground';
 import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from 'react-i18next';
@@ -9,11 +9,31 @@ import { MoodChart } from '../../components/tracker/MoodChart';
 import { spacing } from '../../../theme/spacing';
 import { getPast7Days } from '../../utils/dateHelpers';
 import { Ionicons } from '@expo/vector-icons';
+import { auth } from '../../utils/firebase';
+import { syncUserDataFromFirestore } from '../../utils/syncService';
+import { syncStreakData } from '../../utils/streakService';
+import * as Haptics from 'expo-haptics';
 
 export default function TrackerHistoryScreen() {
   const { t } = useTranslation();
   const { colors, isDark } = useTheme();
   const { entries, streak, streakBroken, streakHistory } = useMoodStore();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    const user = auth.currentUser;
+    if (user) {
+      try {
+        await syncUserDataFromFirestore(user.uid);
+        await syncStreakData(user.uid);
+      } catch (err) {
+        console.warn("[TrackerHistoryScreen] Re-sync failed:", err);
+      }
+    }
+    setRefreshing(false);
+  }, []);
 
   // Get last 7 days mood averages
   const last7Days = getPast7Days();
@@ -126,9 +146,17 @@ export default function TrackerHistoryScreen() {
         data={entries}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.listContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.accent}
+            colors={[colors.accent]}
+          />
+        }
         ListHeaderComponent={() => (
           <View>
-            <Text style={[styles.title, { color: colors.text }]}>Check-in Streak</Text>
+            <Text style={[styles.title, { color: '#FFFFFF' }]}>Check-in Streak</Text>
             <Card style={styles.streakCard}>
               <View style={styles.streakHeader}>
                 <View>
@@ -156,11 +184,11 @@ export default function TrackerHistoryScreen() {
               {renderStreakCalendar()}
             </Card>
 
-            <Text style={[styles.title, { color: colors.text }]}>Past 7 Days Mood Trend</Text>
+            <Text style={[styles.title, { color: '#FFFFFF' }]}>Past 7 Days Mood Trend</Text>
             <Card style={styles.chartCard}>
               <MoodChart data={chartData} />
             </Card>
-            <Text style={[styles.title, { color: colors.text, marginTop: spacing.xl }]}>All Entries</Text>
+            <Text style={[styles.title, { color: '#FFFFFF', marginTop: spacing.xl }]}>All Entries</Text>
           </View>
         )}
         renderItem={renderItem}
@@ -185,6 +213,10 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: spacing.md,
+    color: '#FFFFFF',
+    textShadowColor: '#000000',
+    textShadowOffset: { width: -1.5, height: 1.5 },
+    textShadowRadius: 2.5,
   },
   chartCard: {
     padding: spacing.sm,

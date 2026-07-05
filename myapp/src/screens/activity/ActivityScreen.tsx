@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Image, RefreshControl } from 'react-native';
 import { ForestBackground } from '../../components/common/ForestBackground';
 import Svg, { Circle } from 'react-native-svg';
 import { useTheme } from '../../hooks/useTheme';
@@ -15,6 +15,7 @@ import { RootStackParamList, BottomTabParamList } from '../../navigation/types';
 import { CompositeNavigationProp } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import { NotificationController } from '../../utils/NotificationController';
+import * as Haptics from 'expo-haptics';
 
 type ActivityNavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<BottomTabParamList, 'Activity'>,
@@ -28,6 +29,16 @@ type Props = {
 export default function ActivityScreen({ navigation }: Props) {
   const { t } = useTranslation();
   const { colors } = useTheme();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    const uid = useActivityStore.getState().activeUserId;
+    useActivityStore.getState().loadUserActivity(uid);
+    await new Promise(resolve => setTimeout(resolve, 800));
+    setRefreshing(false);
+  }, []);
   
   const { 
     stepsCount, 
@@ -100,8 +111,19 @@ export default function ActivityScreen({ navigation }: Props) {
   return (
     <View style={[styles.outerContainer, { backgroundColor: colors.background }]}>
       <ForestBackground bgHeightRatio={0.38} showBottomPlants />
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        <Text style={[styles.title, { color: colors.text, marginBottom: spacing.xl }]}>{t('activity.title')}</Text>
+      <ScrollView 
+        style={styles.container} 
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.accent}
+            colors={[colors.accent]}
+          />
+        }
+      >
+        <Text style={[styles.title, { color: '#FFFFFF', marginBottom: spacing.xl }]}>{t('activity.title')}</Text>
 
         {/* Pedometer Section */}
         <Card style={styles.stepsCard}>
@@ -305,8 +327,15 @@ export default function ActivityScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   outerContainer: { flex: 1, position: 'relative' },
   container: { flex: 1 },
-  content: { padding: spacing.lg, paddingTop: spacing.xxl },
-  title: { fontSize: 28, fontWeight: 'bold' },
+  content: { padding: spacing.lg, paddingTop: spacing.xxl, paddingBottom: 100 },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    textShadowColor: '#000000',
+    textShadowOffset: { width: -1.5, height: 1.5 },
+    textShadowRadius: 2.5,
+  },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

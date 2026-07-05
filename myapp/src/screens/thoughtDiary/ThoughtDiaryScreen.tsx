@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl } from 'react-native';
 import { ForestBackground } from '../../components/common/ForestBackground';
 import { useTheme } from '../../hooks/useTheme';
 import { useThoughtStore, ThoughtEntry } from '../../store/thoughtStore';
@@ -10,6 +10,7 @@ import { rf } from '../../utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
+import * as Haptics from 'expo-haptics';
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList>;
@@ -18,6 +19,14 @@ type Props = {
 export default function ThoughtDiaryScreen({ navigation }: Props) {
   const { colors } = useTheme();
   const { entries, deleteEntry } = useThoughtStore();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    await new Promise(resolve => setTimeout(resolve, 800));
+    setRefreshing(false);
+  }, []);
 
   const renderItem = ({ item }: { item: ThoughtEntry }) => (
     <Card style={styles.card}>
@@ -52,12 +61,20 @@ export default function ThoughtDiaryScreen({ navigation }: Props) {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ForestBackground bgHeightRatio={0.36} showBottomPlants />
       <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]}>Thought Dairy</Text>
+        <Text style={[styles.title, { color: '#FFFFFF' }]}>Thought Diary</Text>
       </View>
       <FlatList
         data={entries}
         keyExtractor={item => item.id}
         contentContainerStyle={styles.listContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.accent}
+            colors={[colors.accent]}
+          />
+        }
         renderItem={renderItem}
         ListEmptyComponent={() => (
           <View style={styles.emptyState}>
@@ -90,10 +107,14 @@ const styles = StyleSheet.create({
     fontFamily: typography.display,
     fontSize: rf(32),
     fontWeight: 'bold',
+    color: '#FFFFFF',
+    textShadowColor: '#000000',
+    textShadowOffset: { width: -1.5, height: 1.5 },
+    textShadowRadius: 2.5,
   },
   listContent: {
     padding: spacing.lg,
-    paddingBottom: 100, // For FAB
+    paddingBottom: 120, // For FAB and floating nav bar
   },
   card: {
     marginBottom: spacing.md,
@@ -142,7 +163,7 @@ const styles = StyleSheet.create({
   },
   fab: {
     position: 'absolute',
-    bottom: 24,
+    bottom: 96, // moved up to float above the new floating tab bar beautifully
     right: 24,
     width: 64,
     height: 64,

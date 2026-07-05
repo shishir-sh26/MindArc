@@ -122,7 +122,7 @@ export default function BreathingScreen() {
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ForestBackground bgHeightRatio={0.40} showBottomPlants />
       <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]}>{t('breathing.title')}</Text>
+        <Text style={[styles.title, { color: '#FFFFFF' }]}>{t('breathing.title')}</Text>
         <Text style={[styles.subtitle, { color: '#3E2723' }]}>
           {t('breathing.subtitle')}
         </Text>
@@ -189,6 +189,10 @@ const styles = StyleSheet.create({
     fontFamily: typography.display,
     fontSize: rf(32),
     fontWeight: '800',
+    color: '#FFFFFF',
+    textShadowColor: '#000000',
+    textShadowOffset: { width: -1.5, height: 1.5 },
+    textShadowRadius: 2.5,
   },
   subtitle: {
     fontFamily: typography.body,

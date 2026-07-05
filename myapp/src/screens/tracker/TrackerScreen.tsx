@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { ForestBackground } from '../../components/common/ForestBackground';
 import { db, auth } from '../../utils/firebase';
 import { collection, addDoc, doc, setDoc } from 'firebase/firestore';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert, RefreshControl } from 'react-native';
 import { useTheme } from '../../hooks/useTheme';
 import { useMoodStore } from '../../store/moodStore';
 import { updateUserStreak, isYesterday } from '../../utils/streakService';
@@ -54,6 +54,22 @@ export default function TrackerScreen({ navigation }: Props) {
   const [sleepQuality, setSleepQuality] = useState<'poor' | 'okay' | 'good'>('okay');
   const [thoughtDiary, setThoughtDiary] = useState<string>('');
   const [appetite, setAppetite] = useState<'poor' | 'low' | 'normal' | 'high' | 'excessive'>('normal');
+
+  const [refreshing, setRefreshing] = useState(false);
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    const entry = getEntryByDate(todayDate);
+    if (entry) {
+      setMoodLevel(entry.moodLevel);
+      setSymptoms(entry.symptoms);
+      setSleepHours(entry.sleepHours);
+      setSleepQuality(entry.sleepQuality);
+      setThoughtDiary(entry.thoughtDiary || '');
+      setAppetite(entry.appetite || 'normal');
+    }
+    await new Promise(resolve => setTimeout(resolve, 800));
+    setRefreshing(false);
+  }, [todayDate, getEntryByDate]);
 
   // Dynamic reset / re-initialization on screen focus or date shifts
   useEffect(() => {
@@ -175,9 +191,20 @@ export default function TrackerScreen({ navigation }: Props) {
   return (
     <View style={[styles.outerContainer, { backgroundColor: colors.background }]}>
       <ForestBackground bgHeightRatio={0.38} showBottomPlants />
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.accent}
+            colors={[colors.accent]}
+          />
+        }
+      >
       <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]}>{t('tracker.title')}</Text>
+        <Text style={[styles.title, { color: '#FFFFFF' }]}>{t('tracker.title')}</Text>
         <TouchableOpacity onPress={() => navigation.navigate('TrackerHistory')}>
           <Text style={{ color: colors.accent }}>{t('tracker.history')}</Text>
         </TouchableOpacity>
@@ -342,6 +369,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: 'bold',
+    color: '#FFFFFF',
+    textShadowColor: '#000000',
+    textShadowOffset: { width: -1.5, height: 1.5 },
+    textShadowRadius: 2.5,
   },
   card: {
     marginBottom: spacing.md,

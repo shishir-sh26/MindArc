@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TouchableWithoutFeedback, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TouchableWithoutFeedback, Image, RefreshControl, TextInput, Alert } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../hooks/useTheme';
 import { getGreeting } from '../../utils/dateHelpers';
@@ -25,6 +25,7 @@ import { db, auth } from '../../utils/firebase';
 import { collection, addDoc, doc, setDoc, getDoc } from 'firebase/firestore';
 import { updateUserStreak, isYesterday } from '../../utils/streakService';
 import { syncUserDataFromFirestore } from '../../utils/syncService';
+import { NotificationController } from '../../utils/NotificationController';
 
 type Props = CompositeScreenProps<
   BottomTabScreenProps<BottomTabParamList, 'Home'>,
@@ -50,6 +51,42 @@ export default function HomeScreen({ navigation }: Props) {
   const { profile, setProfile } = useUserStore();
   const [activeVideoId, setActiveVideoId] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  
+  const [refreshing, setRefreshing] = useState(false);
+  const [customTitle, setCustomTitle] = useState('');
+  const [customBody, setCustomBody] = useState('');
+  const [customDelay, setCustomDelay] = useState('10'); // Default 10 seconds
+
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Medium);
+    const user = auth.currentUser;
+    if (user) {
+      try {
+        await syncUserDataFromFirestore(user.uid);
+        const userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          const data = userDoc.data();
+          const updates: any = {};
+          if (data.name !== undefined) updates.name = data.name;
+          if (data.bio !== undefined) updates.bio = data.bio;
+          if (data.age !== undefined) updates.age = data.age.toString();
+          if (data.gender !== undefined) updates.gender = data.gender;
+          if (data.stepGoal !== undefined) updates.stepGoal = data.stepGoal.toString();
+          if (data.waterGoal !== undefined) updates.waterGoal = data.waterGoal.toString();
+          if (data.focusArea !== undefined) updates.focusArea = data.focusArea;
+          if (data.preferredWorkout !== undefined) updates.preferredWorkout = data.preferredWorkout;
+          
+          if (Object.keys(updates).length > 0) {
+            setProfile(updates);
+          }
+        }
+      } catch (err) {
+        console.warn("[HomeScreen] Refresh sync failed:", err);
+      }
+    }
+    setRefreshing(false);
+  }, [setProfile]);
   
   const isFocused = useIsFocused();
   const [todayDate, setTodayDate] = useState(new Date().toISOString().split('T')[0]);
@@ -228,6 +265,14 @@ export default function HomeScreen({ navigation }: Props) {
         style={styles.container}
         contentContainerStyle={[styles.content, { paddingBottom: hp(16) }]}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.accent}
+            colors={[colors.accent]}
+          />
+        }
       >
       <AnimatedView style={[styles.header, headerAnimatedStyle]}>
         <View style={styles.headerLeft}>
@@ -412,6 +457,87 @@ export default function HomeScreen({ navigation }: Props) {
           />
         </View>
 
+        {/* Custom Notification Scheduler Section */}
+        <SectionTitle title="🔔 Custom Alerts" color={colors.text} />
+        <View style={[styles.customNotificationCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+          <Text style={[styles.customNotificationSub, { color: colors.textMuted }]}>
+            Schedule a custom wellness alert or reminder to pop up after a delay.
+          </Text>
+          <TextInput
+            style={[styles.customNotificationInput, { backgroundColor: colors.surfaceAlt, color: colors.text, borderColor: colors.border }]}
+            placeholder="Notification Title (e.g. Time for water! 💧)"
+            placeholderTextColor={colors.textMuted}
+            value={customTitle}
+            onChangeText={setCustomTitle}
+          />
+          <TextInput
+            style={[styles.customNotificationInput, { backgroundColor: colors.surfaceAlt, color: colors.text, borderColor: colors.border }]}
+            placeholder="Notification Body (e.g. Relax, stretch, and check your posture.)"
+            placeholderTextColor={colors.textMuted}
+            value={customBody}
+            onChangeText={setCustomBody}
+          />
+          
+          <Text style={{ fontFamily: typography.body, color: colors.text, fontSize: rf(14), marginTop: 8, marginBottom: 8 }}>
+            Pop up delay (seconds): {customDelay} seconds
+          </Text>
+          
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+            {['5', '10', '30', '60', '300', '1800'].map(secs => (
+              <TouchableOpacity
+                key={secs}
+                onPress={() => setCustomDelay(secs)}
+                style={{
+                  paddingHorizontal: 12,
+                  paddingVertical: 6,
+                  borderRadius: 12,
+                  backgroundColor: customDelay === secs ? colors.accent : colors.surfaceAlt,
+                  borderWidth: 1,
+                  borderColor: colors.borderLight
+                }}
+              >
+                <Text style={{ color: customDelay === secs ? 'white' : colors.text, fontSize: rf(12) }}>
+                  {secs === '300' ? '5 min' : secs === '1800' ? '30 min' : `${secs}s`}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          <TouchableOpacity
+            style={{
+              backgroundColor: colors.accent,
+              padding: hp(1.8),
+              borderRadius: 14,
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginTop: 4,
+            }}
+            onPress={async () => {
+              HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Medium);
+              const delay = parseInt(customDelay, 10);
+              if (isNaN(delay) || delay <= 0) {
+                Alert.alert("Error", "Please specify a valid delay in seconds.");
+                return;
+              }
+              const titleVal = customTitle.trim() || "MindArc Reminder 🌿";
+              const bodyVal = customBody.trim() || "Take a deep breath and check in.";
+              
+              const scheduledId = await NotificationController.scheduleCustomNotification(titleVal, bodyVal, delay);
+              if (scheduledId) {
+                Alert.alert("Scheduled Successfully", `Your custom alert will trigger in ${delay} seconds.`);
+                setCustomTitle('');
+                setCustomBody('');
+              } else {
+                Alert.alert("Error", "Could not schedule notification. Make sure permissions are granted.");
+              }
+            }}
+          >
+            <Text style={{ color: 'white', fontFamily: typography.label, fontWeight: 'bold', letterSpacing: 0.5 }}>
+              SCHEDULE CUSTOM ALERT
+            </Text>
+          </TouchableOpacity>
+        </View>
+
       </View>
       </ScrollView>
       <SettingsModal 
@@ -431,7 +557,18 @@ export default function HomeScreen({ navigation }: Props) {
 // Subcomponents
 
 const SectionTitle = ({ title, color }: { title: string, color: string }) => (
-  <Text style={{ fontFamily: typography.display, fontSize: rf(18), fontWeight: '600', color: color, marginBottom: hp(1.5), marginLeft: wp(2), marginTop: hp(2) }}>
+  <Text style={{
+    fontFamily: typography.display,
+    fontSize: rf(21),
+    fontWeight: '800',
+    color: '#0F240E',
+    textShadowColor: '#FFFFFF',
+    textShadowOffset: { width: -1.2, height: 1.2 },
+    textShadowRadius: 2.5,
+    marginBottom: hp(1.5),
+    marginLeft: wp(2),
+    marginTop: hp(2)
+  }}>
     {title}
   </Text>
 );
@@ -513,9 +650,10 @@ const styles = StyleSheet.create({
     fontSize: rf(30),
     fontWeight: '800',
     letterSpacing: 0.3,
-    textShadowColor: 'rgba(0, 0, 0, 0.4)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
+    color: '#FFFFFF',
+    textShadowColor: '#000000',
+    textShadowOffset: { width: -1.5, height: 1.5 },
+    textShadowRadius: 2.5,
   },
   profileBtn: {
     paddingHorizontal: wp(3),
@@ -674,5 +812,32 @@ const styles = StyleSheet.create({
     fontSize: rf(13),
     fontWeight: '600',
     lineHeight: rf(18),
+  },
+  customNotificationCard: {
+    width: wp(90),
+    alignSelf: 'center',
+    padding: hp(2.5),
+    borderRadius: 24,
+    borderWidth: 1,
+    marginBottom: hp(3),
+    shadowColor: '#C4A882',
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  customNotificationSub: {
+    fontFamily: typography.body,
+    fontSize: rf(13),
+    marginBottom: hp(1.5),
+    lineHeight: rf(18),
+  },
+  customNotificationInput: {
+    height: 48,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    fontSize: rf(14),
+    fontFamily: typography.body,
+    marginBottom: hp(1.5),
   }
 });

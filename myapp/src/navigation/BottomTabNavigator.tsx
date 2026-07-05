@@ -4,7 +4,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Animated as RNAnimated } from
 import { BottomTabParamList } from './types';
 import { useTheme } from '../hooks/useTheme';
 import { Ionicons } from '@expo/vector-icons';
-import { hp } from '../utils/responsive';
+import { hp, wp } from '../utils/responsive';
 import Animated, { useAnimatedStyle, withSpring, withSequence, useSharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -204,13 +204,21 @@ export const BottomTabNavigator = () => {
           tabBarInactiveTintColor: colors.textLight,
           tabBarShowLabel: false,
           tabBarStyle: {
+            position: 'absolute',
+            bottom: hp(2.2),
+            left: wp(4),
+            right: wp(4),
+            height: 64,
+            borderRadius: 24,
             backgroundColor: colors.surface,
-            borderTopWidth: 1,
-            borderTopColor: colors.borderLight,
-            height: hp(9) + insets.bottom,
-            paddingBottom: insets.bottom,
-            elevation: 0,
-            shadowOpacity: 0,
+            borderWidth: 1.5,
+            borderColor: colors.borderLight,
+            shadowColor: '#000000',
+            shadowOffset: { width: 0, height: 8 },
+            shadowOpacity: 0.18,
+            shadowRadius: 14,
+            elevation: 8,
+            paddingBottom: 0,
           },
           tabBarIcon: ({ color, focused }) => {
             let iconName: any = 'home-outline';
@@ -248,7 +256,7 @@ export const BottomTabNavigator = () => {
 const styles = StyleSheet.create({
   tooltipContainer: {
     position: 'absolute',
-    bottom: hp(11), // Position beautifully floating above the navigation tab bar
+    bottom: hp(2.2) + 72, // Position beautifully floating above the floating tab bar
     left: '6%',
     right: '6%',
     borderRadius: 20,

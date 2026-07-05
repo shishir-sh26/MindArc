@@ -147,5 +147,74 @@ export const NotificationController = {
   cancelWellnessPrompts: async () => {
     await Notifications.cancelScheduledNotificationAsync(WELLNESS_PROMPTS_ID);
     console.log("Cancelled 2-hour wellness prompts");
+  },
+
+  /**
+   * Schedules a custom recurring or delayed notification.
+   */
+  scheduleCustomRecurringNotification: async (
+    title: string,
+    body: string,
+    mode: 'delay' | 'hourly' | 'daily',
+    delaySeconds?: number,
+    hour?: number,
+    minute?: number
+  ) => {
+    try {
+      const hasPermission = await NotificationController.requestPermissionsAsync();
+      if (!hasPermission) {
+        console.warn('Notification permission not granted.');
+        return null;
+      }
+
+      let trigger: any = {};
+      if (mode === 'delay') {
+        trigger = {
+          type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+          seconds: delaySeconds || 10,
+          repeats: false,
+        };
+      } else if (mode === 'hourly') {
+        trigger = {
+          type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+          seconds: 3600,
+          repeats: true,
+        };
+      } else if (mode === 'daily') {
+        trigger = {
+          type: Notifications.SchedulableTriggerInputTypes.DAILY,
+          hour: hour ?? 8,
+          minute: minute ?? 0,
+          repeats: true,
+        };
+      }
+
+      const notificationId = await Notifications.scheduleNotificationAsync({
+        content: {
+          title: title || "MindArc Reminder 🌿",
+          body: body || "Take a deep breath and check in.",
+          sound: true,
+        },
+        trigger,
+      });
+
+      console.log(`Scheduled custom notification (${mode}). ID: ${notificationId}`);
+      return notificationId;
+    } catch (error) {
+      console.error('Failed to schedule custom notification:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Cancels a specific scheduled notification by ID.
+   */
+  cancelCustomNotification: async (id: string) => {
+    try {
+      await Notifications.cancelScheduledNotificationAsync(id);
+      console.log(`Cancelled custom notification: ${id}`);
+    } catch (error) {
+      console.error('Failed to cancel custom notification:', error);
+    }
   }
 };

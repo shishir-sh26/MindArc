@@ -27,6 +27,7 @@ const AnxietyMeter = ({ onLevelChange }: { onLevelChange: (level: 'low' | 'mid' 
   const { t } = useTranslation();
   const stressVal = useSharedValue(0);
   const [level, setLevel] = useState<'low' | 'mid' | 'high'>('low');
+  const [showInfo, setShowInfo] = useState(false);
   
   const handleTap = (val: number, label: 'low' | 'mid' | 'high') => {
     HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Light);
@@ -57,7 +58,40 @@ const AnxietyMeter = ({ onLevelChange }: { onLevelChange: (level: 'low' | 'mid' 
 
   return (
     <View style={[simStyles.container, { backgroundColor: colors.surface, borderColor: colors.border, shadowColor: colors.accentDeep }]}>
-      <Text style={[simStyles.title, { color: colors.text }]}>{t('learn.sim.anxietyTitle', { defaultValue: "Interactive Stress Meter" })}</Text>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: hp(1) }}>
+        <Text style={[simStyles.title, { color: colors.text, flex: 1, textAlign: 'left' }]}>
+          {t('learn.sim.anxietyTitle', { defaultValue: "Interactive Stress Meter" })}
+        </Text>
+        <TouchableOpacity onPress={() => setShowInfo(!showInfo)} style={{ padding: 4 }}>
+          <Ionicons name={showInfo ? "close-circle-outline" : "information-circle-outline"} size={22} color={colors.accent} />
+        </TouchableOpacity>
+      </View>
+
+      {showInfo && (
+        <View style={{ backgroundColor: colors.surfaceAlt, padding: spacing.md, borderRadius: 12, borderWidth: 1, borderColor: colors.borderLight, marginBottom: hp(1.5) }}>
+          <Text style={{ fontFamily: typography.label, fontWeight: '700', fontSize: rf(13), color: colors.accentDeep, marginBottom: 4 }}>
+            WHAT IT IS USED FOR:
+          </Text>
+          <Text style={{ fontFamily: typography.body, fontSize: rf(13), color: colors.text, marginBottom: 8 }}>
+            Visualizes body-mind tension ranges (low, medium, or high stress).
+          </Text>
+          
+          <Text style={{ fontFamily: typography.label, fontWeight: '700', fontSize: rf(13), color: colors.accentDeep, marginBottom: 4 }}>
+            HOW IT WORKS:
+          </Text>
+          <Text style={{ fontFamily: typography.body, fontSize: rf(13), color: colors.text, marginBottom: 8 }}>
+            Tap LOW, MED, or HIGH. The visual column fluctuates to simulate emotional arousal, and updates the coping checklist below.
+          </Text>
+          
+          <Text style={{ fontFamily: typography.label, fontWeight: '700', fontSize: rf(13), color: colors.accentDeep, marginBottom: 4 }}>
+            WHY IT IS USEFUL:
+          </Text>
+          <Text style={{ fontFamily: typography.body, fontSize: rf(13), color: colors.text }}>
+            Builds somatic self-awareness (interoception) and maps mental labels to physical sensations so you can choose the right coping tools.
+          </Text>
+        </View>
+      )}
+
       <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: hp(20), marginVertical: hp(2), width: '100%', backgroundColor: colors.surfaceAlt, borderRadius: 12, overflow: 'hidden' }}>
         <Animated.View style={[{ width: '100%', position: 'absolute', bottom: 0 }, barStyle]} />
       </View>
@@ -711,13 +745,229 @@ const LifestyleAssessment = () => {
   );
 };
 
+const ZenSproutGame = () => {
+  const { colors } = useTheme();
+  const [taps, setTaps] = useState(0);
+  const scale = useSharedValue(1);
+
+  const stages = [
+    { label: 'Seed in Soil 🟤', emoji: '🟤', hint: 'Give it water to sprout' },
+    { label: 'Baby Sprout 🌱', emoji: '🌱', hint: 'Keep watering to grow leaves' },
+    { label: 'Budding Leaf 🌿', emoji: '🌿', hint: 'Almost ready to bloom' },
+    { label: 'Blooming Flower 🌸', emoji: '🌸', hint: 'Beautiful! Garden is healthy!' },
+    { label: 'Golden Lotus 🪷', emoji: '🪷', hint: 'Fully grown. Tap reset to start over.' },
+  ];
+
+  const currentStageIdx = Math.min(Math.floor(taps / 4), stages.length - 1);
+  const currentStage = stages[currentStageIdx];
+
+  const handleWater = () => {
+    HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Light);
+    scale.value = withSequence(
+      withTiming(1.3, { duration: 150 }),
+      withTiming(1, { duration: 250 })
+    );
+    setTaps(t => t + 1);
+  };
+
+  const handleReset = () => {
+    HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Medium);
+    setTaps(0);
+  };
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }]
+  }));
+
+  const progressPercent = Math.min((taps % 4) / 4, 1) * 100;
+
+  return (
+    <View style={{ alignItems: 'center', paddingVertical: 10 }}>
+      <Animated.View style={[{ width: 80, height: 80, alignItems: 'center', justifyContent: 'center', marginVertical: hp(1) }, animatedStyle]}>
+        <Text style={{ fontSize: rf(54) }}>{currentStage.emoji}</Text>
+      </Animated.View>
+      <Text style={{ fontFamily: typography.label, color: colors.text, fontSize: rf(16), fontWeight: 'bold' }}>
+        {currentStage.label}
+      </Text>
+      <Text style={{ fontFamily: typography.body, color: colors.textMuted, fontSize: rf(12), marginTop: 2, textAlign: 'center' }}>
+        {currentStage.hint}
+      </Text>
+      
+      {currentStageIdx < stages.length - 1 ? (
+        <View style={{ width: '80%', height: 6, backgroundColor: colors.surfaceAlt, borderRadius: 3, marginVertical: hp(2), overflow: 'hidden' }}>
+          <View style={{ width: `${progressPercent}%`, height: '100%', backgroundColor: colors.accent, borderRadius: 3 }} />
+        </View>
+      ) : (
+        <View style={{ height: 6, marginVertical: hp(2) }} />
+      )}
+
+      {currentStageIdx < stages.length - 1 ? (
+        <TouchableOpacity
+          onPress={handleWater}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: colors.accent,
+            paddingVertical: 10,
+            paddingHorizontal: 20,
+            borderRadius: 12,
+            gap: 6
+          }}
+        >
+          <Ionicons name="water" size={18} color="white" />
+          <Text style={{ color: 'white', fontFamily: typography.label, fontWeight: 'bold' }}>WATER PLANT</Text>
+        </TouchableOpacity>
+      ) : (
+        <TouchableOpacity
+          onPress={handleReset}
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            backgroundColor: colors.accent,
+            paddingVertical: 10,
+            paddingHorizontal: 20,
+            borderRadius: 12,
+            gap: 6
+          }}
+        >
+          <Ionicons name="refresh" size={18} color="white" />
+          <Text style={{ color: 'white', fontFamily: typography.label, fontWeight: 'bold' }}>RESTART GARDEN</Text>
+        </TouchableOpacity>
+      )}
+    </View>
+  );
+};
+
+const BalloonReleaseGame = () => {
+  const { colors } = useTheme();
+  const [text, setText] = useState('');
+  const [isReleased, setIsReleased] = useState(false);
+  const balloonY = useSharedValue(0);
+  const balloonOpacity = useSharedValue(1);
+
+  const handleRelease = () => {
+    if (!text.trim()) return;
+    HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Heavy);
+    setIsReleased(true);
+    balloonY.value = withTiming(-hp(30), { duration: 3500, easing: Easing.out(Easing.quad) });
+    balloonOpacity.value = withTiming(0, { duration: 3500 });
+  };
+
+  const handleReset = () => {
+    HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Light);
+    setText('');
+    setIsReleased(false);
+    balloonY.value = 0;
+    balloonOpacity.value = 1;
+  };
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: balloonY.value }],
+    opacity: balloonOpacity.value
+  }));
+
+  return (
+    <View style={{ alignItems: 'center', paddingVertical: 10, width: '100%' }}>
+      {!isReleased ? (
+        <View style={{ width: '100%', alignItems: 'center' }}>
+          <View style={{ width: 70, height: 70, alignItems: 'center', justifyContent: 'center' }}>
+            <Text style={{ fontSize: rf(48) }}>🎈</Text>
+          </View>
+          <TextInput
+            style={{
+              width: '90%',
+              height: 48,
+              borderWidth: 1,
+              borderColor: colors.border,
+              backgroundColor: colors.surfaceAlt,
+              borderRadius: 12,
+              paddingHorizontal: 12,
+              color: colors.text,
+              fontFamily: typography.body,
+              textAlign: 'center',
+              marginTop: hp(1.5),
+              marginBottom: hp(2)
+            }}
+            placeholder="Type your worry (e.g. Anxiety, Deadlines)"
+            placeholderTextColor={colors.textMuted}
+            value={text}
+            onChangeText={setText}
+          />
+          <TouchableOpacity
+            onPress={handleRelease}
+            disabled={!text.trim()}
+            style={{
+              backgroundColor: text.trim() ? colors.danger : colors.border,
+              paddingVertical: 10,
+              paddingHorizontal: 20,
+              borderRadius: 12,
+              opacity: text.trim() ? 1 : 0.6
+            }}
+          >
+            <Text style={{ color: 'white', fontFamily: typography.label, fontWeight: 'bold' }}>RELEASE WORRY</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <View style={{ alignItems: 'center', width: '100%' }}>
+          <Animated.View style={[{ alignItems: 'center', zIndex: 10 }, animatedStyle]}>
+            <View style={{ padding: 8, backgroundColor: 'rgba(239, 68, 68, 0.9)', borderRadius: 10, marginBottom: 4 }}>
+              <Text style={{ color: 'white', fontSize: rf(12), fontFamily: typography.mono, fontWeight: 'bold' }}>{text}</Text>
+            </View>
+            <Text style={{ fontSize: rf(48) }}>🎈</Text>
+          </Animated.View>
+          
+          <Text style={{ fontFamily: typography.body, color: colors.text, fontSize: rf(14), fontStyle: 'italic', marginTop: hp(4), textAlign: 'center' }}>
+            Watch your worry drift away into the sky...
+          </Text>
+          
+          <TouchableOpacity
+            onPress={handleReset}
+            style={{
+              backgroundColor: colors.accent,
+              paddingVertical: 10,
+              paddingHorizontal: 20,
+              borderRadius: 12,
+              marginTop: hp(2)
+            }}
+          >
+            <Text style={{ color: 'white', fontFamily: typography.label, fontWeight: 'bold' }}>GET ANOTHER BALLOON</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+    </View>
+  );
+};
+
 const RelievingGames = () => {
   const { colors } = useTheme();
   const { t } = useTranslation();
+  const [showGamesInfo, setShowGamesInfo] = useState(false);
   
   return (
     <View style={{ marginTop: hp(6), paddingBottom: hp(4) }}>
-      <Text style={[styles.tipsTitle, { color: colors.text }]}>{t('learn.sim.gamesTitle', { defaultValue: "🕹️ Relieving Games" })}</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: hp(1) }}>
+        <Text style={[styles.tipsTitle, { color: colors.text, marginBottom: 0 }]}>
+          {t('learn.sim.gamesTitle', { defaultValue: "🕹️ Relieving Games" })}
+        </Text>
+        <TouchableOpacity onPress={() => setShowGamesInfo(!showGamesInfo)} style={{ padding: 4 }}>
+          <Ionicons name={showGamesInfo ? "close-circle-outline" : "help-circle-outline"} size={22} color={colors.accent} />
+        </TouchableOpacity>
+      </View>
+
+      {showGamesInfo && (
+        <View style={{ backgroundColor: colors.surfaceAlt, padding: spacing.md, borderRadius: 12, borderWidth: 1, borderColor: colors.borderLight, marginBottom: hp(2) }}>
+          <Text style={{ fontFamily: typography.label, fontWeight: '700', fontSize: rf(13), color: colors.accentDeep, marginBottom: 4 }}>
+            WHY INTERACTIVE GAMES ARE NEEDED:
+          </Text>
+          <Text style={{ fontFamily: typography.body, fontSize: rf(13), color: colors.text, marginBottom: 6 }}>
+            • **Grounding Exercise:** Relieving games shift the brain's focus away from internal anxious worry-loops and re-direct cognitive resources to active motor and visual coordinates.
+          </Text>
+          <Text style={{ fontFamily: typography.body, fontSize: rf(13), color: colors.text }}>
+            • **Dopamine & Calming:** Interacting with simple physics, growth vectors, and tactile haptic bubbles triggers minor dopamine releases, down-regulating the nervous system from fight-or-flight response.
+          </Text>
+        </View>
+      )}
+
       <Text style={[styles.metaText, { color: colors.textMuted, marginBottom: hp(2) }]}>
         {t('learn.sim.gamesSubtitle', { defaultValue: "Interactive activities to help ground you in the present moment." })}
       </Text>
@@ -739,6 +989,24 @@ const RelievingGames = () => {
         <StressBubbles />
         <Text style={[simStyles.desc, { color: colors.textMuted, marginTop: hp(1) }]}>
           {t('learn.sim.popStressDesc', { defaultValue: "Tap the bubbles to release tension." })}
+        </Text>
+      </View>
+
+      {/* 3. Zen Sprout Garden Game */}
+      <View style={[simStyles.container, { marginBottom: hp(3), backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <Text style={[simStyles.title, { color: colors.text, marginBottom: hp(1) }]}>🌱 Zen Sprout Garden</Text>
+        <ZenSproutGame />
+        <Text style={[simStyles.desc, { color: colors.textMuted, marginTop: hp(1) }]}>
+          Tap the watering can to nurture the sprout. Watch it grow and bloom!
+        </Text>
+      </View>
+
+      {/* 4. Thought Balloon Release Game */}
+      <View style={[simStyles.container, { marginBottom: hp(3), backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <Text style={[simStyles.title, { color: colors.text, marginBottom: hp(1) }]}>🎈 Thought Balloon Release</Text>
+        <BalloonReleaseGame />
+        <Text style={[simStyles.desc, { color: colors.textMuted, marginTop: hp(1) }]}>
+          Write a negative thought inside the balloon and tap release to set it free.
         </Text>
       </View>
     </View>
@@ -893,7 +1161,7 @@ const StressBubbles = () => {
 };
 
 export default function ModuleDetailScreen() {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const route = useRoute<ModuleDetailRouteProp>();
   const navigation = useNavigation();
   const { module } = route.params;
@@ -931,7 +1199,7 @@ export default function ModuleDetailScreen() {
 
   return (
     <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.content}>
-      <Text style={[styles.title, { color: colors.text }]}>{translatedTitle}</Text>
+      <Text style={[styles.title, { color: '#FFFFFF' }]}>{translatedTitle}</Text>
       
       <View style={[styles.meta, { backgroundColor: colors.surfaceAlt, borderColor: colors.borderLight }]}>
         <Text style={[styles.metaText, { color: colors.accentDeep }]}>{translatedCategory.toUpperCase()}</Text>
@@ -950,7 +1218,7 @@ export default function ModuleDetailScreen() {
         const translatedSecContent = t(`learn.modules.m${module.id}.sections.s${sIdx}.content`, { defaultValue: sec.content });
         return (
           <View key={sIdx} style={{ marginTop: hp(3) }}>
-            <Text style={{ fontFamily: typography.display, fontSize: rf(20), fontWeight: '600', color: colors.text, marginBottom: hp(1) }}>
+            <Text style={{ fontFamily: typography.display, fontSize: rf(21), fontWeight: '800', color: colors.text, marginBottom: hp(1) }}>
               {translatedSecHeading}
             </Text>
             <Text style={[styles.contentBody, { color: colors.text, lineHeight: rf(24) }]}>
@@ -959,9 +1227,9 @@ export default function ModuleDetailScreen() {
             {sec.tips && sec.tips.map((tip: string, tIdx: number) => {
               const translatedSecTip = t(`learn.modules.m${module.id}.sections.s${sIdx}.tips.${tIdx}`, { defaultValue: tip });
               return (
-                <View key={tIdx} style={[styles.tipCard, { backgroundColor: colors.surfaceAlt, marginTop: hp(1.5), marginBottom: 0, shadowOpacity: 0, borderWidth: 1, borderColor: colors.borderLight }]}>
+                <View key={tIdx} style={[styles.tipCard, { backgroundColor: isDark ? 'rgba(93, 191, 110, 0.1)' : 'rgba(90, 156, 58, 0.08)', borderLeftWidth: 4, borderLeftColor: colors.accent, marginTop: hp(1.5), marginBottom: 0, shadowOpacity: 0 }]}>
                   <Ionicons name="bulb-outline" size={16} color={colors.accent} style={{ marginRight: spacing.sm, marginTop: 2 }} />
-                  <Text style={[styles.tipText, { color: colors.text, fontSize: rf(14) }]}>{translatedSecTip}</Text>
+                  <Text style={[styles.tipText, { color: colors.text, fontSize: rf(14), fontWeight: '600' }]}>{translatedSecTip}</Text>
                 </View>
               );
             })}
@@ -1005,9 +1273,9 @@ export default function ModuleDetailScreen() {
               ? tip
               : t(`learn.modules.m${module.id}.tips.${idx}`, { defaultValue: tip });
             return (
-              <View key={idx} style={[styles.tipCard, { backgroundColor: colors.surface }]}>
-                <Text style={{ color: colors.accent, marginRight: spacing.sm }}>•</Text>
-                <Text style={[styles.tipText, { color: colors.text }]}>{translatedTip}</Text>
+              <View key={idx} style={[styles.tipCard, { backgroundColor: isDark ? 'rgba(93, 191, 110, 0.1)' : 'rgba(90, 156, 58, 0.08)', borderLeftWidth: 4, borderLeftColor: colors.accent }]}>
+                <Ionicons name="checkmark-circle-outline" size={18} color={colors.accent} style={{ marginRight: spacing.sm, marginTop: 1 }} />
+                <Text style={[styles.tipText, { color: colors.text, fontWeight: '600' }]}>{translatedTip}</Text>
               </View>
             );
           })}
@@ -1022,11 +1290,15 @@ export default function ModuleDetailScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { padding: wp(5), paddingBottom: hp(12) },
+  content: { padding: wp(5), paddingBottom: 100 },
   title: {
     fontFamily: typography.display,
     fontSize: rf(32),
-    fontWeight: '600',
+    fontWeight: '800',
+    color: '#FFFFFF',
+    textShadowColor: '#000000',
+    textShadowOffset: { width: -1.5, height: 1.5 },
+    textShadowRadius: 2.5,
     marginBottom: hp(2),
   },
   meta: {

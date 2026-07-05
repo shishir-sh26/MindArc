@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, FlatList, RefreshControl } from 'react-native';
 import { ForestBackground } from '../../components/common/ForestBackground';
 import { useTheme } from '../../hooks/useTheme';
 import { educationalModules } from '../../data/educationalModules';
@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
+import * as Haptics from 'expo-haptics';
 
 type Props = {
   navigation: NativeStackNavigationProp<RootStackParamList, 'Tabs'>;
@@ -19,12 +20,21 @@ type Props = {
 export default function LearnScreen({ navigation }: Props) {
   const { t } = useTranslation();
   const { colors, isDark } = useTheme();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    // Simulate brief network refresh
+    await new Promise(resolve => setTimeout(resolve, 800));
+    setRefreshing(false);
+  }, []);
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <ForestBackground bgHeightRatio={0.38} showBottomPlants />
       <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]}>{t('learn.title')}</Text>
+        <Text style={[styles.title, { color: '#FFFFFF' }]}>{t('learn.title')}</Text>
         <Text style={[styles.subtitle, { color: '#F4F9F4' }]}>{t('learn.subtitle')}</Text>
       </View>
       
@@ -32,6 +42,14 @@ export default function LearnScreen({ navigation }: Props) {
         data={educationalModules}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.accent}
+            colors={[colors.accent]}
+          />
+        }
         renderItem={({ item }) => (
           <Card 
             style={styles.card} 
@@ -71,6 +89,10 @@ const styles = StyleSheet.create({
     fontFamily: typography.display,
     fontSize: rf(32),
     fontWeight: 'bold',
+    color: '#FFFFFF',
+    textShadowColor: '#000000',
+    textShadowOffset: { width: -1.5, height: 1.5 },
+    textShadowRadius: 2.5,
   },
   subtitle: {
     fontSize: 16,
@@ -79,6 +101,7 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: spacing.lg,
+    paddingBottom: 100, // padding for floating nav bar
   },
   card: {
     flexDirection: 'row',

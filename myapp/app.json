@@ -11,8 +11,10 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSMotionUsageDescription": "This app uses motion sensor data to track your daily steps and help you maintain your activity goals."
-      }
+        "NSMotionUsageDescription": "This app uses motion sensor data to track your daily steps and help you maintain your activity goals.",
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "bundleIdentifier": "com.company.mindarc"
     },
     "android": {
       "adaptiveIcon": {

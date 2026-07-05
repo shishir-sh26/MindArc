@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native';
 import { ForestBackground } from '../../components/common/ForestBackground';
 import { useTheme } from '../../hooks/useTheme';
 import { Card } from '../../components/common/Card';
@@ -10,6 +10,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList, BottomTabParamList } from '../../navigation/types';
 import { CompositeNavigationProp } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import * as Haptics from 'expo-haptics';
 
 type RelaxNavigationProp = CompositeNavigationProp<
   BottomTabNavigationProp<BottomTabParamList, 'Relax'>,
@@ -23,13 +24,32 @@ type Props = {
 export default function RelaxScreen({ navigation }: Props) {
   const { t } = useTranslation();
   const { colors } = useTheme();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    await new Promise(resolve => setTimeout(resolve, 800));
+    setRefreshing(false);
+  }, []);
 
   return (
     <View style={[styles.outerContainer, { backgroundColor: colors.background }]}>
       <ForestBackground bgHeightRatio={0.40} showBottomPlants />
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <ScrollView 
+        style={styles.container} 
+        contentContainerStyle={styles.content}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.accent}
+            colors={[colors.accent]}
+          />
+        }
+      >
       <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.text }]}>{t('relax.title')}</Text>
+        <Text style={[styles.title, { color: '#FFFFFF' }]}>{t('relax.title')}</Text>
         <Text style={[styles.subtitle, { color: '#F4F9F4' }]}>
           {t('relax.subtitle')}
         </Text>
@@ -82,6 +102,7 @@ const styles = StyleSheet.create({
   content: {
     padding: spacing.lg,
     paddingTop: spacing.xxl,
+    paddingBottom: 100, // padding for floating nav bar
   },
   header: {
     marginBottom: spacing.xl,
@@ -89,6 +110,10 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: 'bold',
+    color: '#FFFFFF',
+    textShadowColor: '#000000',
+    textShadowOffset: { width: -1.5, height: 1.5 },
+    textShadowRadius: 2.5,
   },
   subtitle: {
     fontSize: 16,
