@@ -62,7 +62,7 @@ export default function AuthScreen() {
       
       <View style={styles.container}>
         <View style={[styles.card, { backgroundColor: isDark ? 'rgba(13,27,11,0.92)' : 'rgba(240,247,232,0.95)', borderColor: colors.border }]}>
-          <Text style={[styles.title, { color: colors.text }]}>MindArc</Text>
+          <Text style={[styles.title, { color: colors.text }]}>Mind Matrix</Text>
           <Text style={[styles.subtitle, { color: colors.textMuted }]}>
             {isLogin ? t('auth.welcomeBack') : t('auth.createAccount')}
           </Text>

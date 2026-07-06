@@ -126,7 +126,7 @@ export default function NewThoughtEntryScreen({ navigation }: Props) {
     >
       <ForestBackground bgHeightRatio={0.36} showBottomPlants={false} />
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-        <Text style={[styles.heading, { color: colors.text }]}>{t('thoughtDiary.theSituation')}</Text>
+        <Text style={[styles.heading, { color: '#0F240E' }]}>{t('thoughtDiary.theSituation')}</Text>
         <TextInput
           style={inputStyle}
           placeholder={t('thoughtDiary.theSituationPlaceholder')}
@@ -136,7 +136,7 @@ export default function NewThoughtEntryScreen({ navigation }: Props) {
           onChangeText={setSituation}
         />
 
-        <Text style={[styles.heading, { color: colors.text }]}>{t('thoughtDiary.negativeThought')}</Text>
+        <Text style={[styles.heading, { color: '#0F240E' }]}>{t('thoughtDiary.negativeThought')}</Text>
         <TextInput
           style={inputStyle}
           placeholder={t('thoughtDiary.negativeThoughtPlaceholder')}
@@ -146,7 +146,7 @@ export default function NewThoughtEntryScreen({ navigation }: Props) {
           onChangeText={setAutomaticThought}
         />
 
-        <Text style={[styles.heading, { color: colors.text }]}>{t('thoughtDiary.emotion')}</Text>
+        <Text style={[styles.heading, { color: '#0F240E' }]}>{t('thoughtDiary.emotion')}</Text>
         <TextInput
           style={[...inputStyle, { minHeight: 48 }]}
           placeholder={t('thoughtDiary.emotionPlaceholder')}
@@ -169,7 +169,7 @@ export default function NewThoughtEntryScreen({ navigation }: Props) {
           />
         </View>
 
-        <Text style={[styles.heading, { color: colors.text }]}>{t('thoughtDiary.evidenceFor')}</Text>
+        <Text style={[styles.heading, { color: '#0F240E' }]}>{t('thoughtDiary.evidenceFor')}</Text>
         <TextInput
           style={inputStyle}
           placeholder={t('thoughtDiary.evidenceForPlaceholder')}
@@ -179,7 +179,7 @@ export default function NewThoughtEntryScreen({ navigation }: Props) {
           onChangeText={setEvidenceFor}
         />
 
-        <Text style={[styles.heading, { color: colors.text }]}>{t('thoughtDiary.evidenceAgainst')}</Text>
+        <Text style={[styles.heading, { color: '#0F240E' }]}>{t('thoughtDiary.evidenceAgainst')}</Text>
         <TextInput
           style={inputStyle}
           placeholder={t('thoughtDiary.evidenceAgainstPlaceholder')}
@@ -189,7 +189,7 @@ export default function NewThoughtEntryScreen({ navigation }: Props) {
           onChangeText={setEvidenceAgainst}
         />
 
-        <Text style={[styles.heading, { color: colors.text }]}>{t('thoughtDiary.balancedThought')}</Text>
+        <Text style={[styles.heading, { color: '#0F240E' }]}>{t('thoughtDiary.balancedThought')}</Text>
         <TextInput
           style={inputStyle}
           placeholder={t('thoughtDiary.balancedThoughtPlaceholder')}
@@ -220,9 +220,12 @@ const styles = StyleSheet.create({
   },
   heading: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '800',
     marginTop: spacing.lg,
     marginBottom: spacing.sm,
+    textShadowColor: '#FFFFFF',
+    textShadowOffset: { width: -1.2, height: 1.2 },
+    textShadowRadius: 2.5,
   },
   input: {
     borderWidth: 1,

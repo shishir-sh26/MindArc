@@ -4,6 +4,7 @@ import { ForestBackground } from '../../components/common/ForestBackground';
 import { useTheme } from '../../hooks/useTheme';
 import { useTranslation } from 'react-i18next';
 import { useMoodStore, MoodEntry } from '../../store/moodStore';
+import { MoodIcon, getMoodColor, MOODS } from './TrackerScreen';
 import { Card } from '../../components/common/Card';
 import { MoodChart } from '../../components/tracker/MoodChart';
 import { spacing } from '../../../theme/spacing';
@@ -114,9 +115,12 @@ export default function TrackerHistoryScreen() {
     return (
       <Card style={styles.entryCard}>
         <View style={styles.entryHeader}>
-          <Text style={[styles.dateText, { color: colors.text }]}>{item.date} at {timeString}</Text>
-          <Text style={[styles.moodText, { color: colors.textMuted }]}>
-            Mood Level: {item.moodLevel}/5
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <MoodIcon level={item.moodLevel} size={24} color={getMoodColor(item.moodLevel)} />
+            <Text style={[styles.dateText, { color: colors.text }]}>{item.date} at {timeString}</Text>
+          </View>
+          <Text style={[styles.moodText, { color: getMoodColor(item.moodLevel), fontWeight: '700' }]}>
+            {MOODS.find(m => m.level === item.moodLevel)?.label || `Mood: ${item.moodLevel}`}
           </Text>
         </View>
         

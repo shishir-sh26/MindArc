@@ -26,7 +26,7 @@ import { collection, addDoc, doc, setDoc, getDoc } from 'firebase/firestore';
 import { updateUserStreak, isYesterday } from '../../utils/streakService';
 import { syncUserDataFromFirestore } from '../../utils/syncService';
 import { NotificationController } from '../../utils/NotificationController';
-import { MoodIcon } from '../tracker/TrackerScreen';
+import { MoodIcon, getMoodColor } from '../tracker/TrackerScreen';
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 const AnimatedView = Animated.createAnimatedComponent(View);
@@ -293,7 +293,7 @@ export default function HomeScreen({ navigation }: Props) {
             style={[styles.profileBtn, { paddingHorizontal: wp(2.5), backgroundColor: isDark ? 'rgba(17,30,15,0.85)' : 'rgba(232,242,220,0.85)', borderColor: colors.border }]}
             onPress={toggleTheme}
           >
-            <Text style={{ fontSize: rf(14) }}>{isDark ? '🌙' : '🌿'}</Text>
+            <Text style={{ fontSize: rf(14) }}>{isDark ? '☀️' : '🌙'}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.profileBtn, { backgroundColor: isDark ? 'rgba(17,30,15,0.85)' : 'rgba(232,242,220,0.85)', borderColor: colors.border }]}
@@ -626,7 +626,7 @@ export default function HomeScreen({ navigation }: Props) {
             }}
             onPress={async () => {
               HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Medium);
-              const titleVal = customTitle.trim() || "MindArc Reminder";
+              const titleVal = customTitle.trim() || "Mind Matrix Reminder";
               const bodyVal = customBody.trim() || "Take a deep breath and check in.";
 
               if (notificationMode === 'delay') {
@@ -694,15 +694,15 @@ export default function HomeScreen({ navigation }: Props) {
 
 // Subcomponents
 
-const SectionTitle = ({ title, color }: { title: string, color: string }) => (
+const SectionTitle = ({ title, color, whiteTitleBlackBorder }: { title: string, color: string, whiteTitleBlackBorder?: boolean }) => (
   <Text style={{
     fontFamily: typography.display,
     fontSize: rf(21),
     fontWeight: '800',
-    color: '#0F240E',
-    textShadowColor: '#FFFFFF',
+    color: whiteTitleBlackBorder ? '#FFFFFF' : '#0F240E',
+    textShadowColor: whiteTitleBlackBorder ? '#000000' : '#FFFFFF',
     textShadowOffset: { width: -1.2, height: 1.2 },
-    textShadowRadius: 2.5,
+    textShadowRadius: whiteTitleBlackBorder ? 4 : 2.5,
     marginBottom: hp(1.5),
     marginLeft: wp(2),
     marginTop: hp(2)
@@ -715,6 +715,7 @@ const MoodIconButton = ({ level, onPress, isSelected }: { level: number, onPress
   const scale = useSharedValue(1);
   const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
   const { colors } = useTheme();
+  const moodColor = getMoodColor(level);
   
   return (
     <TouchableWithoutFeedback
@@ -722,14 +723,46 @@ const MoodIconButton = ({ level, onPress, isSelected }: { level: number, onPress
       onPressOut={() => { scale.value = withSpring(1); }}
       onPress={onPress}
     >
-      <AnimatedView style={[styles.emojiOuter, animatedStyle, isSelected && { backgroundColor: colors.accentSoft }]}>
-        <MoodIcon level={level} size={32} color={isSelected ? colors.accent : colors.textMuted} />
+      <AnimatedView style={[
+        styles.emojiOuter, 
+        animatedStyle, 
+        isSelected ? { 
+          backgroundColor: moodColor + '22',
+          borderColor: moodColor,
+          borderWidth: 1.5,
+          borderRadius: 22,
+        } : {
+          borderColor: 'transparent',
+          borderWidth: 1.5,
+        }
+      ]}>
+        <View style={{ opacity: isSelected ? 1.0 : 0.45 }}>
+          <MoodIcon level={level} size={32} color={moodColor} />
+        </View>
       </AnimatedView>
     </TouchableWithoutFeedback>
   );
 };
 
-const GridCard = ({ title, subtitle, colorLight, colorDark, icon, delay, onPress }: { title: string, subtitle: string, colorLight: string, colorDark: string, icon: React.ReactNode, delay: number, onPress: () => void }) => {
+const GridCard = ({ 
+  title, 
+  subtitle, 
+  colorLight, 
+  colorDark, 
+  icon, 
+  delay, 
+  onPress,
+  whiteTitleBlackBorder 
+}: { 
+  title: string, 
+  subtitle: string, 
+  colorLight: string, 
+  colorDark: string, 
+  icon: React.ReactNode, 
+  delay: number, 
+  onPress: () => void,
+  whiteTitleBlackBorder?: boolean
+}) => {
   const scale = useSharedValue(1);
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(20);
@@ -745,7 +778,7 @@ const GridCard = ({ title, subtitle, colorLight, colorDark, icon, delay, onPress
     transform: [{ translateY: translateY.value }, { scale: scale.value }]
   }));
 
-  const textColor = isDark ? colors.text : colorDark;
+  const textColor = whiteTitleBlackBorder ? '#FFFFFF' : (isDark ? colors.text : colorDark);
   const subTextColor = isDark ? colors.textMuted : colorDark;
 
   return (
@@ -756,7 +789,15 @@ const GridCard = ({ title, subtitle, colorLight, colorDark, icon, delay, onPress
     >
       <AnimatedView style={[styles.gridItem, { backgroundColor: colorLight }, animatedStyle]}>
         <View style={styles.iconWrapper}>{icon}</View>
-        <Text style={[styles.gridTitle, { color: textColor }]}>{title}</Text>
+        <Text style={[
+          styles.gridTitle, 
+          { color: textColor },
+          whiteTitleBlackBorder && {
+            textShadowColor: '#000000',
+            textShadowOffset: { width: -1.2, height: 1.2 },
+            textShadowRadius: 3
+          }
+        ]}>{title}</Text>
         <Text style={[styles.gridSub, { color: subTextColor, opacity: isDark ? 1 : 0.8 }]}>{subtitle}</Text>
       </AnimatedView>
     </TouchableWithoutFeedback>

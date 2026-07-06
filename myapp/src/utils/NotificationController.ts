@@ -191,7 +191,7 @@ export const NotificationController = {
 
       const notificationId = await Notifications.scheduleNotificationAsync({
         content: {
-          title: title || "MindArc Reminder 🌿",
+          title: title || "Mind Matrix Reminder 🌿",
           body: body || "Take a deep breath and check in.",
           sound: true,
         },

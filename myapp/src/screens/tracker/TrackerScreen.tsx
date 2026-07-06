@@ -26,7 +26,7 @@ type Props = {
   navigation: TrackerNavigationProp;
 };
 
-const MOODS = [
+export const MOODS = [
   { level: 1, label: 'Sad' },
   { level: 2, label: 'Anxious' },
   { level: 3, label: 'Neutral' },
@@ -34,51 +34,63 @@ const MOODS = [
   { level: 5, label: 'Happy' },
 ];
 
-export const MoodIcon = ({ level, size = 32, color = '#5A9C3A' }: { level: number, size?: number, color?: string }) => {
+export const getMoodColor = (level: number): string => {
+  switch (level) {
+    case 1: return '#3B82F6'; // Sad - Vibrant Blue
+    case 2: return '#8B5CF6'; // Anxious - Purple/Indigo
+    case 3: return '#6B7280'; // Neutral - Slate Gray
+    case 4: return '#10B981'; // Calm - Emerald Green
+    case 5: return '#F59E0B'; // Happy - Amber/Yellow
+    default: return '#5A9C3A';
+  }
+};
+
+export const MoodIcon = ({ level, size = 32, color }: { level: number, size?: number, color?: string }) => {
+  const iconColor = color || getMoodColor(level);
   switch (level) {
     case 1: // Sad
       return (
         <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-          <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth="2" />
-          <Circle cx="9" cy="9" r="1.5" fill={color} />
-          <Circle cx="15" cy="9" r="1.5" fill={color} />
-          <Path d="M8 17C8 17 9 15 12 15C15 15 16 17 16 17" stroke={color} strokeWidth="2" strokeLinecap="round" />
+          <Circle cx="12" cy="12" r="10" stroke={iconColor} strokeWidth="2" />
+          <Circle cx="9" cy="9" r="1.5" fill={iconColor} />
+          <Circle cx="15" cy="9" r="1.5" fill={iconColor} />
+          <Path d="M8 17C8 17 9 15 12 15C15 15 16 17 16 17" stroke={iconColor} strokeWidth="2" strokeLinecap="round" />
         </Svg>
       );
     case 2: // Anxious
       return (
         <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-          <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth="2" />
-          <Circle cx="9" cy="9" r="1.5" fill={color} />
-          <Circle cx="15" cy="9" r="1.5" fill={color} />
-          <Path d="M8 15.5C9 14.5 10 16.5 12 15.5C14 14.5 15 16.5 16 15.5" stroke={color} strokeWidth="2" strokeLinecap="round" />
+          <Circle cx="12" cy="12" r="10" stroke={iconColor} strokeWidth="2" />
+          <Circle cx="9" cy="9" r="1.5" fill={iconColor} />
+          <Circle cx="15" cy="9" r="1.5" fill={iconColor} />
+          <Path d="M8 15.5C9 14.5 10 16.5 12 15.5C14 14.5 15 16.5 16 15.5" stroke={iconColor} strokeWidth="2" strokeLinecap="round" />
         </Svg>
       );
     case 3: // Neutral
       return (
         <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-          <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth="2" />
-          <Circle cx="9" cy="9" r="1.5" fill={color} />
-          <Circle cx="15" cy="9" r="1.5" fill={color} />
-          <Path d="M8 15H16" stroke={color} strokeWidth="2" strokeLinecap="round" />
+          <Circle cx="12" cy="12" r="10" stroke={iconColor} strokeWidth="2" />
+          <Circle cx="9" cy="9" r="1.5" fill={iconColor} />
+          <Circle cx="15" cy="9" r="1.5" fill={iconColor} />
+          <Path d="M8 15H16" stroke={iconColor} strokeWidth="2" strokeLinecap="round" />
         </Svg>
       );
     case 4: // Calm / Content
       return (
         <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-          <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth="2" />
-          <Path d="M8 9.5C8.5 10.5 9.5 10.5 10 9.5" stroke={color} strokeWidth="2" strokeLinecap="round" />
-          <Path d="M14 9.5C14.5 10.5 15.5 10.5 16 9.5" stroke={color} strokeWidth="2" strokeLinecap="round" />
-          <Path d="M9 15C9.5 16 14.5 16 15 15" stroke={color} strokeWidth="2" strokeLinecap="round" />
+          <Circle cx="12" cy="12" r="10" stroke={iconColor} strokeWidth="2" />
+          <Path d="M8 9.5C8.5 10.5 9.5 10.5 10 9.5" stroke={iconColor} strokeWidth="2" strokeLinecap="round" />
+          <Path d="M14 9.5C14.5 10.5 15.5 10.5 16 9.5" stroke={iconColor} strokeWidth="2" strokeLinecap="round" />
+          <Path d="M9 15C9.5 16 14.5 16 15 15" stroke={iconColor} strokeWidth="2" strokeLinecap="round" />
         </Svg>
       );
     case 5: // Happy
       return (
         <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-          <Circle cx="12" cy="12" r="10" stroke={color} strokeWidth="2" />
-          <Circle cx="9" cy="9" r="1.5" fill={color} />
-          <Circle cx="15" cy="9" r="1.5" fill={color} />
-          <Path d="M8 14C8 14 9.5 17 12 17C14.5 17 16 14 16 14" stroke={color} strokeWidth="2" strokeLinecap="round" />
+          <Circle cx="12" cy="12" r="10" stroke={iconColor} strokeWidth="2" />
+          <Circle cx="9" cy="9" r="1.5" fill={iconColor} />
+          <Circle cx="15" cy="9" r="1.5" fill={iconColor} />
+          <Path d="M8 14C8 14 9.5 17 12 17C14.5 17 16 14 16 14" stroke={iconColor} strokeWidth="2" strokeLinecap="round" />
         </Svg>
       );
     default:
@@ -272,14 +284,20 @@ export default function TrackerScreen({ navigation }: Props) {
               onPress={() => setMoodLevel(m.level)}
               style={[
                 styles.moodBtn, 
-                { backgroundColor: moodLevel === m.level ? colors.accentSoft : colors.surfaceAlt }
+                { 
+                  backgroundColor: moodLevel === m.level ? getMoodColor(m.level) + '22' : colors.surfaceAlt,
+                  borderColor: moodLevel === m.level ? getMoodColor(m.level) : colors.border,
+                  borderWidth: 1.5,
+                }
               ]}
             >
-              <MoodIcon 
-                level={m.level} 
-                size={34} 
-                color={moodLevel === m.level ? colors.accent : colors.textMuted} 
-              />
+              <View style={{ opacity: moodLevel === m.level ? 1.0 : 0.45 }}>
+                <MoodIcon 
+                  level={m.level} 
+                  size={34} 
+                  color={getMoodColor(m.level)} 
+                />
+              </View>
             </TouchableOpacity>
           ))}
         </View>

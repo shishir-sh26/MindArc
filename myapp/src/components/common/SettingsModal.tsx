@@ -379,7 +379,7 @@ export const SettingsModal = ({ visible, onClose, onNavigateToUserDetails }: Set
               onPress={() => setShowAboutInfo(true)}
             >
               <Ionicons name="information-circle-outline" size={20} color={colors.text} style={{ marginRight: 10 }} />
-              <Text style={[styles.aboutText, { color: colors.text }]}>MindArc Information</Text>
+              <Text style={[styles.aboutText, { color: colors.text }]}>Mind Matrix Information</Text>
               <Ionicons name="chevron-forward" size={16} color={colors.textMuted} style={{ marginLeft: 'auto' }} />
             </TouchableOpacity>
 
@@ -417,7 +417,7 @@ export const SettingsModal = ({ visible, onClose, onNavigateToUserDetails }: Set
             </Svg>
           </View>
 
-          <Text style={[styles.aboutTitleText, { color: colors.text }]}>MindArc</Text>
+          <Text style={[styles.aboutTitleText, { color: colors.text }]}>Mind Matrix</Text>
           <Text style={[styles.aboutSubtitleText, { color: colors.accent }]}>Your Botanical Mind Companion</Text>
           <Text style={[styles.aboutVersionText, { color: colors.textMuted }]}>Version 1.2.0 (Build 302)</Text>
 
@@ -425,7 +425,7 @@ export const SettingsModal = ({ visible, onClose, onNavigateToUserDetails }: Set
 
           <ScrollView style={styles.aboutScroll} showsVerticalScrollIndicator={false}>
             <Text style={[styles.aboutDescription, { color: colors.text }]}>
-              MindArc is designed to help you nurture mental clarity, track holistic patterns, and find deep relaxation in your daily life. It uses evidence-based Cognitive Behavioral tools alongside soothing breathing and nature soundtracks.
+              Mind Matrix is designed to help you nurture mental clarity, track holistic patterns, and find deep relaxation in your daily life. It features evidence-based Cognitive Behavioral tools, customizable daily check-in triggers, immersive breathing and nature soundtracks, and an interactive Anxiety Meter with a dynamic Coping Strategies checklist. It also includes a battery-optimized, orientation-independent physical step counter sandbox utilizing raw accelerometer DSP for precise footstep tracking.
             </Text>
 
             <Text style={[styles.featuresHeader, { color: colors.text }]}>KEY COMPANION FEATURES</Text>
@@ -454,9 +454,17 @@ export const SettingsModal = ({ visible, onClose, onNavigateToUserDetails }: Set
               <Ionicons name="restaurant-outline" size={16} color={colors.accent} style={{ marginRight: 8 }} />
               <Text style={[styles.featureText, { color: colors.text }]}>Personalized Appetite Guidelines</Text>
             </View>
+            <View style={styles.featureItem}>
+              <Ionicons name="pulse-outline" size={16} color={colors.accent} style={{ marginRight: 8 }} />
+              <Text style={[styles.featureText, { color: colors.text }]}>Interactive Stress Meter & Coping Checklist</Text>
+            </View>
+            <View style={styles.featureItem}>
+              <Ionicons name="notifications-outline" size={16} color={colors.accent} style={{ marginRight: 8 }} />
+              <Text style={[styles.featureText, { color: colors.text }]}>Custom Repeating Check-in Triggers & Reminders</Text>
+            </View>
             
             <Text style={[styles.creditsText, { color: colors.textMuted }]}>
-              Designed and built with care by the MindArc Developer Team. Incorporating high-fidelity botanical styling & responsive native modules.
+              Designed and built with care by the Mind Matrix Developer Team. Incorporating high-fidelity botanical styling, orientation-independent accelerometer DSP, and responsive native modules.
             </Text>
           </ScrollView>
 
