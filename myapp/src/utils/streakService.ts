@@ -1,5 +1,5 @@
 import { db } from './firebase';
-import { doc, getDoc, setDoc, collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, query, getDocs, orderBy, limit } from 'firebase/firestore';
 import { useMoodStore } from '../store/moodStore';
 
 /**
@@ -219,19 +219,16 @@ export const updateUserStreak = async (
 
     let currentStreak = 0;
     let lastPostDate = '';
-    let streakBroken = false;
 
     if (streakDocSnap.exists()) {
       const data = streakDocSnap.data();
       currentStreak = data.current_streak || 0;
       lastPostDate = data.last_post_date || '';
-      streakBroken = data.streak_broken || false;
     } else {
       // Fallback: Check if there's pre-existing logs
       const reconstructed = await reconstructStreak(userId);
       currentStreak = reconstructed.current_streak;
       lastPostDate = reconstructed.last_post_date;
-      streakBroken = reconstructed.streak_broken;
     }
 
     let newStreak = currentStreak;

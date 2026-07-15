@@ -103,10 +103,10 @@ export const PedometerWidget = () => {
           <View style={[styles.statusBadge, { backgroundColor: colors.surfaceAlt }]}>
             <View style={[
               styles.statusDot, 
-              { backgroundColor: isPedometerAvailable === 'true' ? colors.accent : colors.warning }
+              { backgroundColor: isPedometerAvailable === 'available' ? colors.accent : colors.warning }
             ]} />
             <Text style={[styles.statusText, { color: colors.textMuted }]}>
-              {isPedometerAvailable === 'true' 
+              {isPedometerAvailable === 'available' 
                 ? "Pedometer Active" 
                 : isPedometerAvailable === 'checking'
                 ? "Checking Sensors..."

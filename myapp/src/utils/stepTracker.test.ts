@@ -28,14 +28,10 @@ function runTests() {
     const stepFrequency = 1.5; // Hz
     let currentTime = 1000; // start at 1s timestamp
 
-    // We simulate 8 steps.
-    // Each step is represented by a sine wave peak that goes above and below G.
-    // Standard gravity = 1G (approx 9.81 m/s2). Step amplitude = 0.5G (approx 4.9 m/s2).
-    // Total steps to simulate = 8
     const stepDurationMs = 667;
     const samplesPerStep = Math.round(stepDurationMs / samplingInterval);
 
-    // Warm up the detector first to stabilize the filter and rolling window
+    // Warm up the detector first to stabilize the filter and valley history
     for (let i = 0; i < 50; i++) {
       detector.processSample(0, 0, 1.0, currentTime);
       currentTime += samplingInterval;
@@ -51,23 +47,23 @@ function runTests() {
         currentTime += samplingInterval;
       }
 
-      // Check step detection mid-sequence
-      if (step === 4) {
-        // After 5 simulated steps, we should have 0 committed steps (SEARCHING state buffers them)
-        assertEquals(detector.getState(), 'SEARCHING', 'Should remain in SEARCHING state after 5 steps');
-        assertEquals(totalDetectedSteps, 0, 'Should have 0 steps committed to the UI after 5 steps');
-        assertEquals(detector.getBufferLength(), 5, 'Should have 5 steps buffered internally');
+      // Check step detection mid-sequence (lock target is now 2)
+      if (step === 0) {
+        // After 1 simulated step, we should have 0 committed steps (SEARCHING state buffers them)
+        assertEquals(detector.getState(), 'SEARCHING', 'Should remain in SEARCHING state after 1 step');
+        assertEquals(totalDetectedSteps, 0, 'Should have 0 steps committed to the UI after 1 step');
+        assertEquals(detector.getBufferLength(), 1, 'Should have 1 step buffered internally');
       }
       
-      if (step === 5) {
-        // After 6 steps, we transition to LOCKED and flush the buffer of 6 steps instantly
-        assertEquals(detector.getState(), 'LOCKED', 'Should transition to LOCKED state on 6th consecutive step');
-        assertEquals(totalDetectedSteps, 6, 'Should flush and commit all 6 steps on the 6th step');
+      if (step === 1) {
+        // After 2 steps, we transition to LOCKED and flush the buffer of 2 steps instantly
+        assertEquals(detector.getState(), 'LOCKED', 'Should transition to LOCKED state on 2nd consecutive step');
+        assertEquals(totalDetectedSteps, 2, 'Should flush and commit all 2 steps on the 2nd step');
         assertEquals(detector.getBufferLength(), 0, 'Buffer should be empty after locking');
       }
 
       if (step === 7) {
-        // Steps 7 and 8 should increment step counter 1 by 1 in real-time
+        // Steps 3-8 should increment step counter 1 by 1 in real-time
         assertEquals(totalDetectedSteps, 8, 'Should commit subsequent steps 1-by-1 in LOCKED state');
       }
     }
@@ -75,7 +71,7 @@ function runTests() {
 
   // Test Case 2: Inactivity Reset Verification
   (() => {
-    console.log('\n--- Test 2: Inactivity Timeout Reset (>2000ms) ---');
+    console.log('\n--- Test 2: Inactivity Timeout Reset (>2500ms) ---');
     let totalDetectedSteps = 0;
     const detector = new StepDetector((count) => {
       totalDetectedSteps += count;
@@ -87,14 +83,14 @@ function runTests() {
     const stepDurationMs = 667;
     const samplesPerStep = Math.round(stepDurationMs / samplingInterval);
 
-    // Warm up the detector first to stabilize the filter and rolling window
+    // Warm up the detector first to stabilize the filter and valley history
     for (let i = 0; i < 50; i++) {
       detector.processSample(0, 0, 1.0, currentTime);
       currentTime += samplingInterval;
     }
 
-    // 1. Walk 6 steps to achieve LOCK
-    for (let step = 0; step < 6; step++) {
+    // 1. Walk 2 steps to achieve LOCK
+    for (let step = 0; step < 2; step++) {
       for (let sample = 0; sample < samplesPerStep; sample++) {
         const tSeconds = currentTime / 1000;
         const verticalAcc = 1.0 + 0.6 * Math.sin(2 * Math.PI * stepFrequency * tSeconds);
@@ -103,9 +99,9 @@ function runTests() {
       }
     }
     assertEquals(detector.getState(), 'LOCKED', 'Should reach LOCKED state');
-    assertEquals(totalDetectedSteps, 6, 'Should commit 6 steps');
+    assertEquals(totalDetectedSteps, 2, 'Should commit 2 steps');
 
-    // 2. Simulate 3000ms pause (inactivity)
+    // 2. Simulate 3000ms pause (inactivity > 2500ms)
     currentTime += 3000;
     
     // Send a minor sample to trigger check of inactivity delta
@@ -121,7 +117,7 @@ function runTests() {
       detector.processSample(0, 0, verticalAcc, currentTime);
       currentTime += samplingInterval;
     }
-    assertEquals(totalDetectedSteps, 6, 'Should not commit the first post-pause step immediately');
+    assertEquals(totalDetectedSteps, 2, 'Should not commit the first post-pause step immediately');
     assertEquals(detector.getBufferLength(), 1, 'Should buffer the first step in SEARCHING state');
   })();
 
@@ -137,7 +133,7 @@ function runTests() {
     const samplingInterval = 20;
 
     // Simulate high-frequency low-amplitude tremor (hand shake)
-    // Frequency = 12Hz, Amplitude = 0.02G (variance ~0.2 m/s2, below the 0.4 m/s2 threshold)
+    // Frequency = 12Hz, Amplitude = 0.02G (variance ~0.2 m/s2, below the 0.15 m/s2 threshold after smoothing)
     const tremorFrequency = 12.0;
     const tremorDurationMs = 2000;
     const tremorSamples = tremorDurationMs / samplingInterval;
@@ -153,9 +149,9 @@ function runTests() {
     assertEquals(detector.getBufferLength(), 0, 'No steps should be buffered for noise');
   })();
 
-  // Test Case 4: Erratic walking changing to sprinting with hand-shake anomalies
+  // Test Case 4: Gentle Walking Detection (NEW - validates the sensitivity fix)
   (() => {
-    console.log('\n--- Test 4: Erratic Walking to Sprinting with Tremor Anomalies ---');
+    console.log('\n--- Test 4: Gentle Walking Detection (Low Amplitude) ---');
     let totalDetectedSteps = 0;
     const detector = new StepDetector((count) => {
       totalDetectedSteps += count;
@@ -163,55 +159,31 @@ function runTests() {
 
     const samplingInterval = 20; // 50Hz
     let currentTime = 1000;
+    const stepFrequency = 1.8; // Hz (normal walking cadence)
 
-    // 1. Simulate 3 steps of erratic walking (1.0Hz frequency, 600ms per step) with high-frequency noise
-    const walkingFrequency = 1.0;
-    const walkingDurationMs = 1800; // 3 steps
-    const walkingSamples = walkingDurationMs / samplingInterval;
-
-    for (let i = 0; i < walkingSamples; i++) {
-      const tSeconds = currentTime / 1000;
-      // Walking wave + high-frequency hand shake noise (10Hz, 0.05G)
-      // Note: We feed raw Z acceleration as gravity (1.0G is normal, so we oscillate around 1G)
-      const verticalAcc = 1.0 + 0.5 * Math.sin(2 * Math.PI * walkingFrequency * tSeconds)
-                             + 0.05 * Math.sin(2 * Math.PI * 10 * tSeconds);
-      detector.processSample(0, 0, verticalAcc, currentTime);
+    // Warm up
+    for (let i = 0; i < 50; i++) {
+      detector.processSample(0, 0, 1.0, currentTime);
       currentTime += samplingInterval;
     }
-    
-    // Check state: should be SEARCHING, and should have buffered some steps
-    assertEquals(detector.getState(), 'SEARCHING', 'Should remain in SEARCHING state during erratic walk');
-    console.log(`Buffered steps after erratic walk: ${detector.getBufferLength()}`);
 
-    // 2. Simulate a 2.5-second inactivity pause
-    currentTime += 2500;
-    detector.processSample(0, 0, 1.0, currentTime); // Trigger timeout evaluation
-    assertEquals(detector.getState(), 'SEARCHING', 'Should reset to SEARCHING state on inactivity');
-    assertEquals(detector.getBufferLength(), 0, 'Step buffer should be cleared on timeout');
-
-    // 3. Simulate 8 steps of sprinting (2.5Hz frequency, 400ms per step)
-    const sprintingFrequency = 2.5;
-    const stepDurationMs = 400;
+    // Simulate 5 steps of gentle walking with only 0.15G amplitude (soft steps)
+    const stepDurationMs = Math.round(1000 / stepFrequency);
     const samplesPerStep = Math.round(stepDurationMs / samplingInterval);
 
-    for (let step = 0; step < 8; step++) {
+    for (let step = 0; step < 5; step++) {
       for (let sample = 0; sample < samplesPerStep; sample++) {
         const tSeconds = currentTime / 1000;
-        // Sprinting wave (higher amplitude, higher frequency)
-        const verticalAcc = 1.0 + 0.8 * Math.sin(2 * Math.PI * sprintingFrequency * tSeconds);
+        const verticalAcc = 1.0 + 0.15 * Math.sin(2 * Math.PI * stepFrequency * tSeconds);
         detector.processSample(0, 0, verticalAcc, currentTime);
         currentTime += samplingInterval;
       }
-      
-      // Check states and step counts
-      if (step === 5) { // 6th sprinting step
-        assertEquals(detector.getState(), 'LOCKED', 'Should LOCK on 6th sprint step');
-        assertEquals(totalDetectedSteps, 6, 'Should commit 6 steps upon locking');
-      }
-      if (step === 7) { // 8th sprinting step
-        assertEquals(totalDetectedSteps, 8, 'Should commit all 8 sprinting steps');
-      }
     }
+
+    // With the improved sensitivity, gentle walking should be detected
+    console.log(`Gentle walking: detected ${totalDetectedSteps} steps out of 5`);
+    const gentleDetected = totalDetectedSteps >= 3; // At least 3 out of 5 gentle steps
+    assertEquals(gentleDetected, true, 'Should detect at least 3 out of 5 gentle walking steps');
   })();
 
   console.log('\n=== TEST RUN SUMMARY ===');

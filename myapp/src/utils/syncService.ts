@@ -1,4 +1,4 @@
-import { collection, query, where, getDocs, limit, orderBy } from 'firebase/firestore';
+import { collection, query, getDocs, limit } from 'firebase/firestore';
 import { db } from './firebase';
 import { useMoodStore, MoodEntry } from '../store/moodStore';
 import { useThoughtStore, ThoughtEntry } from '../store/thoughtStore';

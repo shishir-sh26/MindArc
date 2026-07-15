@@ -1,16 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { ForestBackground } from '../../components/common/ForestBackground';
 import { useTheme } from '../../hooks/useTheme';
-import { spacing } from '../../../theme/spacing';
+import { spacing, radii } from '../../../theme/spacing';
 import { typography } from '../../../theme/typography';
 import { Ionicons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import { useTranslation } from 'react-i18next';
 import { useAudioStore } from '../../store/audioStore';
-import { hp } from '../../utils/responsive';
+import { hp, rf, wp } from '../../utils/responsive';
 
-// Using local audio files added in myapp/assets/images
 const SOUND_OPTIONS = [
   { id: 'rain', name: 'Heavy Rain', icon: 'rainy', file: require('../../../assets/images/heavyrain.mp3') },
   { id: 'forest', name: 'Forest Birds', icon: 'leaf', file: require('../../../assets/images/forestbirds.mp3') },
@@ -23,24 +22,27 @@ const SOUND_OPTIONS = [
 
 export default function NatureSoundsScreen() {
   const { t } = useTranslation();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
+  const [playMode, setPlayMode] = useState<'single' | 'mix'>('single');
 
   const {
-    activeSoundId,
-    isPlaying,
-    volume,
-    playSound,
-    togglePlayPause,
-    changeVolume,
-    stopAndUnload
+    activeSounds,
+    isMasterPlaying,
+    toggleSound,
+    playSingleSound,
+    setVolume,
+    toggleMasterPlayPause,
+    stopAll
   } = useAudioStore();
+
+  const activeCount = Object.keys(activeSounds).length;
 
   return (
     <View style={[styles.outerContainer, { backgroundColor: colors.background }]}>
       <ForestBackground bgHeightRatio={0.40} showBottomPlants />
       <ScrollView 
         style={styles.container} 
-        contentContainerStyle={[styles.content, activeSoundId ? { paddingBottom: hp(28) } : {}]}
+        contentContainerStyle={[styles.content, activeCount > 0 ? { paddingBottom: hp(28) } : {}]}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.header}>
@@ -50,74 +52,160 @@ export default function NatureSoundsScreen() {
           </Text>
         </View>
 
-        <View style={styles.grid}>
+        {/* Playback Mode Selector */}
+        <View style={[styles.modeToggleContainer, { backgroundColor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.45)', borderColor: colors.borderLight }]}>
+          <TouchableOpacity
+            style={[styles.modeTab, playMode === 'single' && { backgroundColor: colors.accent }]}
+            onPress={async () => {
+              await stopAll();
+              setPlayMode('single');
+            }}
+            activeOpacity={0.85}
+          >
+            <Ionicons name="musical-note-outline" size={16} color={playMode === 'single' ? '#FFFFFF' : colors.textMuted} />
+            <Text style={[styles.modeTabText, { color: playMode === 'single' ? '#FFFFFF' : colors.text }]}>
+              {t('sounds.singleMode', { defaultValue: 'Single Sound' })}
+            </Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[styles.modeTab, playMode === 'mix' && { backgroundColor: colors.accent }]}
+            onPress={async () => {
+              await stopAll();
+              setPlayMode('mix');
+            }}
+            activeOpacity={0.85}
+          >
+            <Ionicons name="options-outline" size={16} color={playMode === 'mix' ? '#FFFFFF' : colors.textMuted} />
+            <Text style={[styles.modeTabText, { color: playMode === 'mix' ? '#FFFFFF' : colors.text }]}>
+              {t('sounds.mixMode', { defaultValue: 'Soundscape Mixer' })}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.listContainer}>
           {SOUND_OPTIONS.map(opt => {
-            const isActive = activeSoundId === opt.id;
+            const soundInfo = activeSounds[opt.id];
+            const isActive = !!soundInfo;
+
             return (
-              <TouchableOpacity 
+              <View 
                 key={opt.id}
                 style={[
                   styles.soundCard, 
                   { 
-                    backgroundColor: isActive ? colors.accentSoft : colors.surface,
+                    backgroundColor: isActive 
+                      ? (isDark ? 'rgba(29, 59, 26, 0.7)' : 'rgba(232, 242, 220, 0.7)') 
+                      : colors.surface,
                     borderColor: isActive ? colors.accent : colors.border
                   }
                 ]}
-                onPress={() => {
-                  if (isActive) togglePlayPause();
-                  else playSound(opt.file, opt.id);
-                }}
               >
-                <Ionicons 
-                  name={opt.icon as any} 
-                  size={42} 
-                  color={isActive ? colors.accent : colors.textMuted} 
-                />
-                <Text style={[styles.soundTitle, { color: isActive ? colors.text : colors.textMuted }]}>
-                  {t(`sounds.options.${opt.id}`)}
-                </Text>
-                
+                <TouchableOpacity 
+                  style={styles.cardHeader}
+                  onPress={async () => {
+                    if (playMode === 'single') {
+                      await playSingleSound(opt.file, opt.id);
+                    } else {
+                      await toggleSound(opt.file, opt.id);
+                    }
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <View style={styles.iconAndTitle}>
+                    <View style={[
+                      styles.iconWrapper, 
+                      { backgroundColor: isActive ? colors.accent : (isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)') }
+                    ]}>
+                      <Ionicons 
+                        name={opt.icon as any} 
+                        size={24} 
+                        color={isActive ? '#FFFFFF' : colors.textMuted} 
+                      />
+                    </View>
+                    <View style={{ marginLeft: spacing.md }}>
+                      <Text style={[styles.soundTitle, { color: colors.text }]}>
+                        {t(`sounds.options.${opt.id}`)}
+                      </Text>
+                      <Text style={[styles.soundStatus, { color: colors.textMuted }]}>
+                        {isActive 
+                          ? t('sounds.playing', { defaultValue: 'Active' }) 
+                          : playMode === 'single' 
+                            ? t('sounds.tapToPlay', { defaultValue: 'Tap to play' }) 
+                            : t('sounds.tapToMix', { defaultValue: 'Tap to mix' })}
+                      </Text>
+                    </View>
+                  </View>
+                  
+                  <View style={styles.toggleWrapper}>
+                    <Ionicons 
+                      name={isActive ? "close-circle-outline" : (playMode === 'single' ? "arrow-forward-circle-outline" : "add-circle-outline")} 
+                      size={26} 
+                      color={isActive ? colors.danger : colors.accent} 
+                    />
+                  </View>
+                </TouchableOpacity>
+
                 {isActive && (
-                  <View style={styles.activeIndicator}>
-                    <Ionicons name={isPlaying ? "pause" : "play"} size={16} color={colors.accent} />
+                  <View style={styles.sliderContainer}>
+                    <Ionicons name="volume-mute-outline" size={16} color={colors.textMuted} />
+                    <Slider
+                      style={styles.slider}
+                      minimumValue={0}
+                      maximumValue={1}
+                      value={soundInfo.volume}
+                      onValueChange={(val) => setVolume(opt.id, val)}
+                      minimumTrackTintColor={colors.accent}
+                      maximumTrackTintColor={colors.border}
+                      thumbTintColor={colors.accentBlue}
+                    />
+                    <Ionicons name="volume-high-outline" size={16} color={colors.textMuted} />
                   </View>
                 )}
-              </TouchableOpacity>
+              </View>
             );
           })}
         </View>
       </ScrollView>
 
-      {/* Media Player Controls (Sticky floating bar at the bottom) */}
-      {activeSoundId && (
-        <View style={[styles.playerContainer, { backgroundColor: colors.surfaceAlt, borderColor: colors.border }]}>
+      {/* Sticky Custom Soundscape Mixer Panel */}
+      {activeCount > 0 && (
+        <View style={[
+          styles.playerContainer, 
+          { 
+            backgroundColor: isDark ? 'rgba(17, 30, 15, 0.92)' : 'rgba(240, 247, 232, 0.92)', 
+            borderColor: colors.accentSoft 
+          }
+        ]}>
           <Text style={[styles.playerTitle, { color: colors.text }]}>
-            {t('sounds.nowPlaying')} {t(`sounds.options.${activeSoundId}`)}
+            {playMode === 'single' 
+              ? `${t('sounds.nowPlaying', { defaultValue: 'Now Playing:' })} ${t(`sounds.options.${Object.keys(activeSounds)[0]}`)}`
+              : `${t('sounds.mixerActive', { defaultValue: 'Soundscape Mixer' })} (${activeCount} ${activeCount === 1 ? t('sounds.track', { defaultValue: 'track' }) : t('sounds.tracks', { defaultValue: 'tracks' })})`
+            }
           </Text>
           
           <View style={styles.controlsRow}>
             <View style={styles.buttonGroup}>
-              <TouchableOpacity onPress={togglePlayPause} style={[styles.playBtn, { backgroundColor: colors.accent }]}>
-                <Ionicons name={isPlaying ? "pause" : "play"} size={26} color="#fff" />
+              <TouchableOpacity 
+                onPress={toggleMasterPlayPause} 
+                style={[styles.playBtn, { backgroundColor: colors.accent }]}
+                activeOpacity={0.8}
+              >
+                <Ionicons name={isMasterPlaying ? "pause" : "play"} size={26} color="#FFFFFF" />
               </TouchableOpacity>
-              <TouchableOpacity onPress={stopAndUnload} style={[styles.playBtn, { backgroundColor: colors.danger }]}>
-                <Ionicons name="stop" size={26} color="#fff" />
+              <TouchableOpacity 
+                onPress={stopAll} 
+                style={[styles.playBtn, { backgroundColor: colors.danger }]}
+                activeOpacity={0.8}
+              >
+                <Ionicons name="stop" size={26} color="#FFFFFF" />
               </TouchableOpacity>
             </View>
             
-            <View style={styles.volumeContainer}>
-              <Ionicons name="volume-low" size={20} color={colors.textMuted} />
-              <Slider
-                style={styles.slider}
-                minimumValue={0}
-                maximumValue={1}
-                value={volume}
-                onValueChange={changeVolume}
-                minimumTrackTintColor={colors.accent}
-                maximumTrackTintColor={colors.border}
-                thumbTintColor={colors.accentBlue}
-              />
-              <Ionicons name="volume-high" size={20} color={colors.textMuted} />
+            <View style={styles.mixerStatus}>
+              <Text style={{ fontFamily: typography.mono, fontSize: rf(11), color: colors.textMuted }}>
+                {isMasterPlaying ? t('sounds.playingLive', { defaultValue: 'PLAYING LIVE' }) : t('sounds.paused', { defaultValue: 'PAUSED' })}
+              </Text>
             </View>
           </View>
         </View>
@@ -130,7 +218,7 @@ const styles = StyleSheet.create({
   outerContainer: { flex: 1, position: 'relative' },
   container: { flex: 1 },
   content: { padding: spacing.lg, paddingBottom: 100 },
-  header: { marginBottom: spacing.xl, marginTop: spacing.md },
+  header: { marginBottom: spacing.lg, marginTop: spacing.md },
   title: {
     fontFamily: typography.display,
     fontSize: 28,
@@ -149,30 +237,81 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: -1.2, height: 1.2 },
     textShadowRadius: 2.2,
   },
-  grid: { 
-    flexDirection: 'row', 
-    flexWrap: 'wrap', 
-    justifyContent: 'space-between',
+  modeToggleContainer: {
+    flexDirection: 'row',
+    padding: 4,
+    borderRadius: 14,
+    borderWidth: 1,
+    marginBottom: spacing.lg,
+    gap: 4
+  },
+  modeTab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    borderRadius: 10,
+    gap: 6
+  },
+  modeTabText: {
+    fontFamily: typography.label,
+    fontSize: rf(12),
+    fontWeight: '700'
+  },
+  listContainer: {
     gap: spacing.md
   },
   soundCard: {
-    width: '47%',
-    aspectRatio: 1,
     borderRadius: 20,
-    borderWidth: 2,
+    borderWidth: 1.5,
+    padding: spacing.md,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  cardHeader: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.md,
+    justifyContent: 'space-between'
+  },
+  iconAndTitle: {
+    flexDirection: 'row',
+    alignItems: 'center'
+  },
+  iconWrapper: {
+    width: 46,
+    height: 46,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center'
   },
   soundTitle: {
-    marginTop: spacing.md,
-    fontSize: 15,
-    fontWeight: '600'
+    fontFamily: typography.body,
+    fontSize: 16,
+    fontWeight: '700'
   },
-  activeIndicator: {
-    position: 'absolute',
-    top: 12,
-    right: 12,
+  soundStatus: {
+    fontFamily: typography.body,
+    fontSize: 12,
+    marginTop: 2
+  },
+  toggleWrapper: {
+    padding: 4
+  },
+  sliderContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: spacing.md,
+    paddingTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(0,0,0,0.05)',
+  },
+  slider: {
+    flex: 1,
+    marginHorizontal: spacing.sm,
   },
   playerContainer: {
     position: 'absolute',
@@ -181,15 +320,16 @@ const styles = StyleSheet.create({
     right: spacing.lg,
     padding: spacing.md,
     borderRadius: 24,
-    borderWidth: 1,
+    borderWidth: 1.5,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.15,
-    shadowRadius: 10,
-    elevation: 8,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    elevation: 10,
   },
   playerTitle: {
-    fontSize: 16,
+    fontFamily: typography.body,
+    fontSize: 15,
     fontWeight: 'bold',
     marginBottom: spacing.md,
     textAlign: 'center',
@@ -201,23 +341,19 @@ const styles = StyleSheet.create({
   },
   buttonGroup: {
     flexDirection: 'row',
-    gap: 10,
+    gap: 12,
   },
   playBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  volumeContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: spacing.lg,
-  },
-  slider: {
-    flex: 1,
-    marginHorizontal: spacing.sm,
+  mixerStatus: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: 'rgba(0,0,0,0.05)',
   }
 });

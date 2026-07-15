@@ -204,15 +204,16 @@ export const BalloonSvg = ({ size = 64, color = '#EF4444' }: { size?: number, co
 
 const ZenSproutGame = () => {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const [taps, setTaps] = useState(0);
   const scale = useSharedValue(1);
 
   const stages = [
-    { label: 'Seed in Soil', hint: 'Give it water to sprout' },
-    { label: 'Baby Sprout', hint: 'Keep watering to grow leaves' },
-    { label: 'Budding Leaf', hint: 'Almost ready to bloom' },
-    { label: 'Blooming Flower', hint: 'Beautiful! Garden is healthy!' },
-    { label: 'Golden Lotus', hint: 'Fully grown. Tap reset to start over.' },
+    { label: t('relax.stages.seed'), hint: t('relax.stages.seedHint') },
+    { label: t('relax.stages.baby'), hint: t('relax.stages.babyHint') },
+    { label: t('relax.stages.budding'), hint: t('relax.stages.buddingHint') },
+    { label: t('relax.stages.blooming'), hint: t('relax.stages.bloomingHint') },
+    { label: t('relax.stages.lotus'), hint: t('relax.stages.lotusHint') },
   ];
 
   const currentStageIdx = Math.min(Math.floor(taps / 4), stages.length - 1);
@@ -272,7 +273,7 @@ const ZenSproutGame = () => {
           }}
         >
           <Ionicons name="water" size={18} color="white" />
-          <Text style={{ color: 'white', fontFamily: typography.label, fontWeight: 'bold' }}>WATER PLANT</Text>
+          <Text style={{ color: 'white', fontFamily: typography.label, fontWeight: 'bold' }}>{t('relax.waterPlant')}</Text>
         </TouchableOpacity>
       ) : (
         <TouchableOpacity
@@ -288,7 +289,7 @@ const ZenSproutGame = () => {
           }}
         >
           <Ionicons name="refresh" size={18} color="white" />
-          <Text style={{ color: 'white', fontFamily: typography.label, fontWeight: 'bold' }}>RESTART GARDEN</Text>
+          <Text style={{ color: 'white', fontFamily: typography.label, fontWeight: 'bold' }}>{t('relax.restartGarden')}</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -297,6 +298,7 @@ const ZenSproutGame = () => {
 
 const BalloonReleaseGame = () => {
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const [text, setText] = useState('');
   const [isReleased, setIsReleased] = useState(false);
   const balloonY = useSharedValue(0);
@@ -345,7 +347,7 @@ const BalloonReleaseGame = () => {
               marginTop: hp(1.5),
               marginBottom: hp(2)
             }}
-            placeholder="Type your worry (e.g. Anxiety, Deadlines)"
+            placeholder={t('relax.balloonPlaceholder')}
             placeholderTextColor={colors.textMuted}
             value={text}
             onChangeText={setText}
@@ -361,7 +363,7 @@ const BalloonReleaseGame = () => {
               opacity: text.trim() ? 1 : 0.6
             }}
           >
-            <Text style={{ color: 'white', fontFamily: typography.label, fontWeight: 'bold' }}>RELEASE WORRY</Text>
+            <Text style={{ color: 'white', fontFamily: typography.label, fontWeight: 'bold' }}>{t('relax.releaseWorry')}</Text>
           </TouchableOpacity>
         </View>
       ) : (
@@ -374,7 +376,7 @@ const BalloonReleaseGame = () => {
           </Animated.View>
           
           <Text style={{ fontFamily: typography.body, color: colors.text, fontSize: rf(14), fontStyle: 'italic', marginTop: hp(4), textAlign: 'center' }}>
-            Watch your worry drift away into the sky...
+            {t('relax.balloonDrift')}
           </Text>
           
           <TouchableOpacity
@@ -387,7 +389,7 @@ const BalloonReleaseGame = () => {
               marginTop: hp(2)
             }}
           >
-            <Text style={{ color: 'white', fontFamily: typography.label, fontWeight: 'bold' }}>GET ANOTHER BALLOON</Text>
+            <Text style={{ color: 'white', fontFamily: typography.label, fontWeight: 'bold' }}>{t('relax.getAnotherBalloon')}</Text>
           </TouchableOpacity>
         </View>
       )}
@@ -401,33 +403,28 @@ export const RelievingGames = () => {
   const [showGamesInfo, setShowGamesInfo] = useState(false);
   
   return (
-    <View style={{ marginTop: hp(4), paddingBottom: hp(4) }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: hp(1) }}>
-        <Text style={[styles.tipsTitle, { color: colors.text, marginBottom: 0 }]}>
-          {t('learn.sim.gamesTitle', { defaultValue: "Relieving Games" })}
-        </Text>
-        <TouchableOpacity onPress={() => setShowGamesInfo(!showGamesInfo)} style={{ padding: 4 }}>
-          <Ionicons name={showGamesInfo ? "close-circle-outline" : "help-circle-outline"} size={22} color={colors.accent} />
+    <View style={{ marginTop: hp(2), paddingBottom: hp(4) }}>
+      {/* Help info button aligned neatly */}
+      <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginBottom: hp(1) }}>
+        <TouchableOpacity onPress={() => setShowGamesInfo(!showGamesInfo)} style={{ padding: 4, flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+          <Ionicons name={showGamesInfo ? "close-circle-outline" : "help-circle-outline"} size={18} color={colors.accent} />
+          <Text style={{ fontSize: rf(12), color: colors.accent, fontWeight: '700' }}>{t('relax.howItWorks')}</Text>
         </TouchableOpacity>
       </View>
 
       {showGamesInfo && (
         <View style={{ backgroundColor: colors.surfaceAlt, padding: spacing.md, borderRadius: 12, borderWidth: 1, borderColor: colors.borderLight, marginBottom: hp(2) }}>
           <Text style={{ fontFamily: typography.label, fontWeight: '700', fontSize: rf(13), color: colors.accentDeep, marginBottom: 4 }}>
-            WHY INTERACTIVE GAMES ARE NEEDED:
+            {t('relax.whyGamesTitle', { defaultValue: "WHY INTERACTIVE GAMES ARE NEEDED:" })}
           </Text>
           <Text style={{ fontFamily: typography.body, fontSize: rf(13), color: colors.text, marginBottom: 6 }}>
-            • **Grounding Exercise:** Relieving games shift the brain's focus away from internal anxious worry-loops and re-direct cognitive resources to active motor and visual coordinates.
+            • {t('relax.whyGamesBullet1', { defaultValue: "**Grounding Exercise:** Relieving games shift the brain's focus away from internal anxious worry-loops and re-direct cognitive resources to active motor and visual coordinates." })}
           </Text>
           <Text style={{ fontFamily: typography.body, fontSize: rf(13), color: colors.text }}>
-            • **Dopamine & Calming:** Interacting with simple physics, growth vectors, and tactile haptic bubbles triggers minor dopamine releases, down-regulating the nervous system from fight-or-flight response.
+            • {t('relax.whyGamesBullet2', { defaultValue: "**Dopamine & Calming:** Interacting with simple physics, growth vectors, and tactile haptic bubbles triggers minor dopamine releases, down-regulating the nervous system from fight-or-flight response." })}
           </Text>
         </View>
       )}
-
-      <Text style={[styles.cardSub, { color: colors.textMuted, marginBottom: hp(2) }]}>
-        {t('learn.sim.gamesSubtitle', { defaultValue: "Interactive activities to help ground you in the present moment." })}
-      </Text>
       
       {/* 1. Breathing Box Game */}
       <View style={[simStyles.container, { marginBottom: hp(3), backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -451,19 +448,19 @@ export const RelievingGames = () => {
 
       {/* 3. Zen Sprout Garden Game */}
       <View style={[simStyles.container, { marginBottom: hp(3), backgroundColor: colors.surface, borderColor: colors.border }]}>
-        <Text style={[simStyles.title, { color: colors.text, marginBottom: hp(1) }]}>Zen Sprout Garden</Text>
+        <Text style={[simStyles.title, { color: colors.text, marginBottom: hp(1) }]}>{t('relax.zenSproutTitle')}</Text>
         <ZenSproutGame />
         <Text style={[simStyles.desc, { color: colors.textMuted, marginTop: hp(1) }]}>
-          Tap the watering can to nurture the sprout. Watch it grow and bloom!
+          {t('relax.zenSproutDesc')}
         </Text>
       </View>
 
       {/* 4. Thought Balloon Release Game */}
       <View style={[simStyles.container, { marginBottom: hp(3), backgroundColor: colors.surface, borderColor: colors.border }]}>
-        <Text style={[simStyles.title, { color: colors.text, marginBottom: hp(1) }]}>Thought Balloon Release</Text>
+        <Text style={[simStyles.title, { color: colors.text, marginBottom: hp(1) }]}>{t('relax.balloonTitle')}</Text>
         <BalloonReleaseGame />
         <Text style={[simStyles.desc, { color: colors.textMuted, marginTop: hp(1) }]}>
-          Write a negative thought inside the balloon and tap release to set it free.
+          {t('relax.balloonDesc')}
         </Text>
       </View>
     </View>

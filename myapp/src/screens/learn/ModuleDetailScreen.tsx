@@ -961,7 +961,7 @@ const RelievingGames = () => {
             WHY INTERACTIVE GAMES ARE NEEDED:
           </Text>
           <Text style={{ fontFamily: typography.body, fontSize: rf(13), color: colors.text, marginBottom: 6 }}>
-            • **Grounding Exercise:** Relieving games shift the brain's focus away from internal anxious worry-loops and re-direct cognitive resources to active motor and visual coordinates.
+            {"• **Grounding Exercise:** Relieving games shift the brain's focus away from internal anxious worry-loops and re-direct cognitive resources to active motor and visual coordinates."}
           </Text>
           <Text style={{ fontFamily: typography.body, fontSize: rf(13), color: colors.text }}>
             • **Dopamine & Calming:** Interacting with simple physics, growth vectors, and tactile haptic bubbles triggers minor dopamine releases, down-regulating the nervous system from fight-or-flight response.

@@ -1,37 +1,52 @@
 import { create } from 'zustand';
 import { Audio } from 'expo-av';
 
-interface AudioState {
-  sound: Audio.Sound | null;
-  activeSoundId: string | null;
-  isPlaying: boolean;
+interface ActiveSoundInfo {
+  sound: Audio.Sound;
   volume: number;
-  playSound: (file: any, id: string) => Promise<void>;
-  togglePlayPause: () => Promise<void>;
-  changeVolume: (val: number) => Promise<void>;
-  stopAndUnload: () => Promise<void>;
+  isPlaying: boolean;
+}
+
+interface AudioState {
+  activeSounds: Record<string, ActiveSoundInfo>;
+  isMasterPlaying: boolean;
+  toggleSound: (file: any, id: string) => Promise<void>;
+  playSingleSound: (file: any, id: string) => Promise<void>;
+  setVolume: (id: string, val: number) => Promise<void>;
+  toggleMasterPlayPause: () => Promise<void>;
+  stopAll: () => Promise<void>;
 }
 
 export const useAudioStore = create<AudioState>((set, get) => ({
-  sound: null,
-  activeSoundId: null,
-  isPlaying: false,
-  volume: 0.5,
+  activeSounds: {},
+  isMasterPlaying: false,
 
-  playSound: async (file, id) => {
-    const { sound: currentSound, volume } = get();
-
-    // 1. Unload current sound if exists
-    if (currentSound) {
+  toggleSound: async (file, id) => {
+    const { activeSounds } = get();
+    
+    // 1. If sound is already loaded, unload and remove it
+    if (activeSounds[id]) {
+      const soundInfo = activeSounds[id];
       try {
-        await currentSound.unloadAsync();
+        await soundInfo.sound.stopAsync();
+        await soundInfo.sound.unloadAsync();
       } catch (e) {
-        console.warn('Error unloading current sound:', e);
+        console.warn(`Error unloading sound ${id}:`, e);
       }
+      
+      const newActive = { ...activeSounds };
+      delete newActive[id];
+      
+      const hasAnyPlaying = Object.values(newActive).some(s => s.isPlaying);
+      set({
+        activeSounds: newActive,
+        isMasterPlaying: hasAnyPlaying
+      });
+      return;
     }
 
+    // 2. Otherwise, load and start playing this sound
     try {
-      // Configure audio mode for background active playback
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: false,
         staysActiveInBackground: true,
@@ -41,61 +56,125 @@ export const useAudioStore = create<AudioState>((set, get) => ({
 
       const { sound: newSound } = await Audio.Sound.createAsync(
         file,
-        { shouldPlay: true, isLooping: true, volume }
+        { shouldPlay: true, isLooping: true, volume: 0.5 }
+      );
+
+      const newActive = {
+        ...activeSounds,
+        [id]: {
+          sound: newSound,
+          volume: 0.5,
+          isPlaying: true
+        }
+      };
+
+      set({
+        activeSounds: newActive,
+        isMasterPlaying: true
+      });
+    } catch (e) {
+      console.warn(`Couldn't load sound ${id}:`, e);
+    }
+  },
+
+  playSingleSound: async (file, id) => {
+    const { activeSounds, stopAll } = get();
+    
+    // If the selected sound is already active, we want to toggle it (stop it)
+    if (activeSounds[id]) {
+      await stopAll();
+      return;
+    }
+    
+    // Otherwise, stop all sounds first to prevent overlay
+    await stopAll();
+    
+    // Now play the new sound
+    try {
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        staysActiveInBackground: true,
+        playsInSilentModeIOS: true,
+        playThroughEarpieceAndroid: false,
+      });
+
+      const { sound: newSound } = await Audio.Sound.createAsync(
+        file,
+        { shouldPlay: true, isLooping: true, volume: 0.5 }
       );
 
       set({
-        sound: newSound,
-        activeSoundId: id,
-        isPlaying: true,
+        activeSounds: {
+          [id]: {
+            sound: newSound,
+            volume: 0.5,
+            isPlaying: true
+          }
+        },
+        isMasterPlaying: true
       });
     } catch (e) {
-      console.warn("Couldn't load sound in global store", e);
+      console.warn(`Couldn't load single sound ${id}:`, e);
     }
   },
 
-  togglePlayPause: async () => {
-    const { sound, isPlaying } = get();
-    if (!sound) return;
+  setVolume: async (id, val) => {
+    const { activeSounds } = get();
+    if (!activeSounds[id]) return;
 
     try {
-      if (isPlaying) {
-        await sound.pauseAsync();
-        set({ isPlaying: false });
-      } else {
-        await sound.playAsync();
-        set({ isPlaying: true });
-      }
+      await activeSounds[id].sound.setVolumeAsync(val);
+      
+      const newActive = { ...activeSounds };
+      newActive[id] = { ...newActive[id], volume: val };
+      
+      set({ activeSounds: newActive });
     } catch (e) {
-      console.warn('Error toggling play/pause:', e);
+      console.warn(`Error setting volume for ${id}:`, e);
     }
   },
 
-  changeVolume: async (val) => {
-    const { sound } = get();
-    set({ volume: val });
-    if (sound) {
-      try {
-        await sound.setVolumeAsync(val);
-      } catch (e) {
-        console.warn('Error updating volume:', e);
-      }
-    }
-  },
+  toggleMasterPlayPause: async () => {
+    const { activeSounds, isMasterPlaying } = get();
+    const nextPlaying = !isMasterPlaying;
 
-  stopAndUnload: async () => {
-    const { sound } = get();
-    if (sound) {
+    for (const id of Object.keys(activeSounds)) {
+      const soundInfo = activeSounds[id];
       try {
-        await sound.unloadAsync();
+        if (nextPlaying) {
+          await soundInfo.sound.playAsync();
+          soundInfo.isPlaying = true;
+        } else {
+          await soundInfo.sound.pauseAsync();
+          soundInfo.isPlaying = false;
+        }
       } catch (e) {
-        console.warn('Error stopping sound:', e);
+        console.warn(`Error toggling playback for ${id}:`, e);
       }
     }
+
     set({
-      sound: null,
-      activeSoundId: null,
-      isPlaying: false,
+      isMasterPlaying: nextPlaying,
+      activeSounds: { ...activeSounds }
+    });
+  },
+
+  stopAll: async () => {
+    const { activeSounds } = get();
+    
+    for (const id of Object.keys(activeSounds)) {
+      const soundInfo = activeSounds[id];
+      try {
+        await soundInfo.sound.stopAsync();
+        await soundInfo.sound.unloadAsync();
+      } catch (e) {
+        console.warn(`Error unloading sound ${id} during stopAll:`, e);
+      }
+    }
+
+    set({
+      activeSounds: {},
+      isMasterPlaying: false
     });
   }
 }));

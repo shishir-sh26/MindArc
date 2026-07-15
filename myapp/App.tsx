@@ -11,6 +11,7 @@ import { Nunito_400Regular, Nunito_500Medium, Nunito_400Regular_Italic } from '@
 import { DMSans_500Medium } from '@expo-google-fonts/dm-sans';
 import { DMMono_400Regular } from '@expo-google-fonts/dm-mono';
 import { usePedometer } from './src/hooks/usePedometer';
+import { TouchGlowOverlay } from './src/components/common/TouchGlowOverlay';
 
 LogBox.ignoreLogs(['expo-notifications: Android Push notifications']);
 
@@ -30,6 +31,10 @@ export default function App() {
     Nunito_Italic: Nunito_400Regular_Italic,
     DMSans: DMSans_500Medium,
     DMMono: DMMono_400Regular,
+    DancingScript_Regular: require('./Dancing_Script/static/DancingScript-Regular.ttf'),
+    DancingScript_Medium: require('./Dancing_Script/static/DancingScript-Medium.ttf'),
+    DancingScript_SemiBold: require('./Dancing_Script/static/DancingScript-SemiBold.ttf'),
+    DancingScript_Bold: require('./Dancing_Script/static/DancingScript-Bold.ttf'),
   });
 
   if (!fontsLoaded) {
@@ -45,7 +50,9 @@ export default function App() {
       <ThemeProvider>
         <AppInitializer />
         <StatusBar style="auto" />
-        <RootNavigator />
+        <TouchGlowOverlay>
+          <RootNavigator />
+        </TouchGlowOverlay>
       </ThemeProvider>
     </SafeAreaProvider>
   );

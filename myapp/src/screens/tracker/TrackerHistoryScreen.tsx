@@ -40,16 +40,9 @@ export default function TrackerHistoryScreen() {
   // Get last 7 days mood averages
   const last7Days = getPast7Days();
   const chartData = last7Days.map(date => {
-    // 1. Find ALL entries for this specific date
     const dayEntries = entries.filter(e => e.date === date);
-    
-    // 2. If no entries exist for this date, return null
     if (dayEntries.length === 0) return null;
-    
-    // 3. Calculate the sum of all mood levels for this date
     const sum = dayEntries.reduce((total, current) => total + current.moodLevel, 0);
-    
-    // 4. Return the mathematical average
     return sum / dayEntries.length;
   }).filter(val => val !== null) as number[];
 
@@ -109,7 +102,6 @@ export default function TrackerHistoryScreen() {
   };
 
   const renderItem = ({ item }: { item: MoodEntry }) => {
-    // Convert the timestamp to a readable time (e.g., "1:18 PM")
     const timeString = new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     return (
@@ -134,7 +126,6 @@ export default function TrackerHistoryScreen() {
           {t('tracker.sleepLabel')}: {item.sleepHours}h ({t(`tracker.sleepQuality.${item.sleepQuality}`)}) • {t('tracker.appetiteLabel')}: {t(`tracker.appetiteLevels.${item.appetite || 'normal'}`)}
         </Text>
 
-        {/* BRUTAL FIX: Actually render the thought diary if the user wrote one */}
         {item.thoughtDiary ? (
           <View style={{ backgroundColor: colors.surfaceAlt, padding: spacing.sm, borderRadius: 8 }}>
             <Text style={{ color: colors.text, fontStyle: 'italic' }}>&quot;{item.thoughtDiary}&quot;</Text>

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, Text, StyleSheet, TouchableOpacity, Animated as RNAnimated } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Animated as RNAnimated, Platform } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { BottomTabParamList } from './types';
 import { useTheme } from '../hooks/useTheme';
 import { Ionicons } from '@expo/vector-icons';
@@ -155,6 +156,7 @@ const Tooltip = forwardRef<TooltipRef, { isDark: boolean; colors: any }>((props,
     </RNAnimated.View>
   );
 });
+Tooltip.displayName = 'Tooltip';
 
 const TabBarButton = (props: any) => {
   const { onPress, onLongPress, children, style, routeName, showTooltip } = props;
@@ -210,16 +212,24 @@ export const BottomTabNavigator = () => {
             right: wp(4),
             height: 64,
             borderRadius: 24,
-            backgroundColor: colors.surface,
+            backgroundColor: isDark ? 'rgba(15, 27, 13, 0.45)' : 'rgba(255, 255, 255, 0.45)',
             borderWidth: 1.5,
-            borderColor: colors.borderLight,
+            borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(255, 255, 255, 0.5)',
             shadowColor: '#000000',
             shadowOffset: { width: 0, height: 8 },
             shadowOpacity: 0.18,
             shadowRadius: 14,
             elevation: 8,
             paddingBottom: 0,
+            overflow: 'hidden',
           },
+          tabBarBackground: () => (
+            <BlurView
+              intensity={Platform.OS === 'ios' ? 70 : 100}
+              tint={isDark ? 'dark' : 'light'}
+              style={StyleSheet.absoluteFill}
+            />
+          ),
           tabBarIcon: ({ color, focused }) => {
             let iconName: any = 'home-outline';
             

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Image } from 'react-native';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Image, Alert } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../hooks/useTheme';
 import { spacing, radii } from '../../../theme/spacing';
@@ -118,6 +118,43 @@ export const SettingsModal = ({ visible, onClose, onNavigateToUserDetails }: Set
         Alert.alert("Error", "Could not save profile details.");
       });
     }
+  };
+
+  const handleDeleteProfile = async () => {
+    if (!user) return;
+    Alert.alert(
+      "Delete Profile & Account",
+      "Are you absolutely sure you want to permanently delete your profile and account? This action cannot be undone and all your mood tracking, thought entries, and settings will be permanently lost.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Delete Permanently", 
+          style: "destructive", 
+          onPress: async () => {
+            try {
+              setIsSaving(true);
+              const { deleteDoc, doc } = await import('firebase/firestore');
+              await deleteDoc(doc(db, 'users', user.uid));
+              await user.delete();
+              setIsSaving(false);
+              onClose();
+              Alert.alert("Account Deleted", "Your profile and account have been permanently removed.");
+            } catch (e: any) {
+              setIsSaving(false);
+              console.warn('Error deleting account:', e);
+              if (e.code === 'auth/requires-recent-login') {
+                Alert.alert(
+                  "Re-authentication Required",
+                  "For security reasons, you must log out and sign back in recently to delete your profile."
+                );
+              } else {
+                Alert.alert("Error", "Could not delete profile. Please try again later.");
+              }
+            }
+          }
+        }
+      ]
+    );
   };
 
   const changeLanguage = (lng: string) => {
@@ -398,6 +435,14 @@ export const SettingsModal = ({ visible, onClose, onNavigateToUserDetails }: Set
             >
               <Ionicons name="log-out-outline" size={20} color="#fff" style={{ marginRight: 8 }} />
               <Text style={styles.signOutText}>{t('settings.signOut')}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={[styles.deleteProfileBtn, { borderColor: colors.danger, borderWidth: 1.5 }]} 
+              onPress={handleDeleteProfile}
+            >
+              <Ionicons name="trash-outline" size={18} color={colors.danger} style={{ marginRight: 8 }} />
+              <Text style={[styles.deleteProfileText, { color: colors.danger }]}>Delete Profile & Account</Text>
             </TouchableOpacity>
           </ScrollView>
 
@@ -864,5 +909,20 @@ const styles = StyleSheet.create({
     fontSize: rf(13),
     fontWeight: 'bold',
     textTransform: 'uppercase',
+  },
+  deleteProfileBtn: {
+    flexDirection: 'row',
+    marginTop: hp(1.5),
+    paddingVertical: hp(1.6),
+    borderRadius: radii.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteProfileText: {
+    fontFamily: typography.label,
+    fontSize: rf(12.5),
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   }
 });

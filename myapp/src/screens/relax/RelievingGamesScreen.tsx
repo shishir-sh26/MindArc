@@ -7,7 +7,6 @@ import { typography } from '../../../theme/typography';
 import { wp, hp, rf } from '../../utils/responsive';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { AnxietyMeter } from '../../components/relax/AnxietyMeter';
 import { RelievingGames } from '../../components/relax/RelievingGames';
 import * as HapticsAPI from 'expo-haptics';
 import { HapticFeedback } from '../../utils/HapticFeedback';
@@ -16,25 +15,6 @@ export default function RelievingGamesScreen() {
   const { t } = useTranslation();
   const { colors, isDark } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
-  const [stressLevel, setStressLevel] = useState<'low' | 'mid' | 'high' | null>(null);
-
-  const levelSpecificTips = {
-    low: [
-      t('learn.levelTips.low.0', { defaultValue: "Maintenance is key: keep up with your daily daily mindfulness to stay balanced." }),
-      t('learn.levelTips.low.1', { defaultValue: "This is a great time for a light walk or reading to reinforce calm." }),
-      t('learn.levelTips.low.2', { defaultValue: "Acknowledge and appreciate your current state of mental clarity." })
-    ],
-    mid: [
-      t('learn.levelTips.mid.0', { defaultValue: "Notice where you're holding tension—usually shoulders, jaw, or neck." }),
-      t('learn.levelTips.mid.1', { defaultValue: "A 5-minute 'reset' break can prevent your stress from escalating further." }),
-      t('learn.levelTips.mid.2', { defaultValue: "Take small sips of water and practice one round of box breathing." })
-    ],
-    high: [
-      t('learn.levelTips.high.0', { defaultValue: "PRIORITY: Stop what you are doing immediately and follow the Breathing Box below." }),
-      t('learn.levelTips.high.1', { defaultValue: "Splash cold water on your face—this helps trigger your body's natural relaxation reflex." }),
-      t('learn.levelTips.high.2', { defaultValue: "Immediate Grounding: Name 5 things you can see and 4 things you can touch right now." })
-    ]
-  };
 
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
@@ -59,29 +39,21 @@ export default function RelievingGamesScreen() {
         }
       >
         <View style={styles.header}>
-          <Text style={[styles.title, { color: '#FFFFFF' }]}>{t('relax.gamesTitle', { defaultValue: "Calming Hub Games" })}</Text>
-          <Text style={[styles.subtitle, { color: '#F4F9F4' }]}>
+          <View style={styles.titleRow}>
+            <Ionicons 
+              name="game-controller" 
+              size={30} 
+              color="#FFFFFF" 
+              style={styles.headerIcon} 
+            />
+            <Text style={[styles.title, { color: '#FFFFFF' }]}>
+              {t('relax.gamesTitle', { defaultValue: "Relieving Games" })}
+            </Text>
+          </View>
+          <Text style={[styles.subtitle, { color: '#FFFFFF' }]}>
             {t('relax.gamesSubtitle', { defaultValue: "Ground yourself in the present moment with interactive activities" })}
           </Text>
         </View>
-
-        {/* Anxiety/Stress Meter component */}
-        <AnxietyMeter onLevelChange={(lvl) => setStressLevel(lvl)} />
-
-        {/* Dynamic tips based on Stress Meter selection */}
-        {stressLevel && (
-          <View style={{ marginTop: hp(3) }}>
-            <Text style={[styles.tipsTitle, { color: colors.text }]}>
-              COPING STRATEGIES: {stressLevel.toUpperCase()} STRESS
-            </Text>
-            {levelSpecificTips[stressLevel].map((tip, idx) => (
-              <View key={idx} style={[styles.tipCard, { backgroundColor: isDark ? 'rgba(93, 191, 110, 0.1)' : 'rgba(90, 156, 58, 0.08)', borderLeftWidth: 4, borderLeftColor: colors.accent }]}>
-                <Ionicons name="checkmark-circle-outline" size={18} color={colors.accent} style={{ marginRight: spacing.sm, marginTop: 1 }} />
-                <Text style={[styles.tipText, { color: colors.text, fontWeight: '600' }]}>{tip}</Text>
-              </View>
-            ))}
-          </View>
-        )}
 
         {/* Relieving Games Component */}
         <RelievingGames />
@@ -105,6 +77,17 @@ const styles = StyleSheet.create({
   },
   header: {
     marginBottom: spacing.xl,
+  },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.xs,
+  },
+  headerIcon: {
+    marginRight: spacing.sm,
+    textShadowColor: '#000000',
+    textShadowOffset: { width: -1.5, height: 1.5 },
+    textShadowRadius: 2.5,
   },
   title: {
     fontFamily: typography.display,

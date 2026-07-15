@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TouchableWithoutFeedback, Image, RefreshControl, TextInput, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TouchableWithoutFeedback, RefreshControl, TextInput, Alert } from 'react-native';
+import { Image } from 'expo-image';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../hooks/useTheme';
 import { getGreeting } from '../../utils/dateHelpers';
 import { AFFIRMATIONS } from '../../utils/constants';
 import { useMoodStore } from '../../store/moodStore';
 import { useUserStore } from '../../store/userStore';
+import { useActivityStore } from '../../store/activityStore';
 import { spacing, radii } from '../../../theme/spacing';
 import { typography } from '../../../theme/typography';
 import { wp, hp, rf } from '../../utils/responsive';
@@ -114,6 +116,7 @@ export default function HomeScreen({ navigation }: Props) {
   // Dynamic date recalculation, background sync, and random quote selection on screen focus
   useEffect(() => {
     if (isFocused) {
+      useActivityStore.getState().checkMidnightReset();
       const currentToday = new Date().toISOString().split('T')[0];
       setTodayDate(currentToday);
 
@@ -341,11 +344,47 @@ export default function HomeScreen({ navigation }: Props) {
       )}
 
       {/* Daily Affirmation Card */}
-      <View style={[styles.affirmationCard, { backgroundColor: isDark ? 'rgba(13,27,11,0.88)' : 'rgba(240,247,232,0.88)', borderColor: colors.border, shadowColor }]}>
-        <Text style={[styles.quoteGlyph, { color: colors.accent, opacity: 0.25 }]}>&quot;</Text>
-        <Text style={[styles.affirmationText, { color: colors.text }]}>
+      <View style={[
+        styles.affirmationCard, 
+        { 
+          backgroundColor: isDark ? 'rgba(12,28,10,0.55)' : 'rgba(255,255,255,0.45)', 
+          borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.6)', 
+          borderWidth: 1.5,
+          shadowColor: isDark ? '#1D3B1A' : '#7BB661',
+          shadowOpacity: 0.12,
+          shadowRadius: 18,
+          elevation: 4
+        }
+      ]}>
+        {/* Top-Left Custom Leaf SVG decoration from Coala02.svg */}
+        <View style={styles.quoteDecorLeft}>
+          <Image 
+            source={require('../../../Coala02.svg')} 
+            style={{ width: 75, height: 25 }} 
+            contentFit="contain"
+          />
+        </View>
+
+        <Text style={[
+          styles.affirmationText, 
+          { 
+            color: isDark ? '#E8F5E9' : '#1A331E',
+            textShadowColor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(255,255,255,0.7)',
+            textShadowOffset: { width: 0, height: 1 },
+            textShadowRadius: 1.5
+          }
+        ]}>
           {t('home.affirmations.q' + quoteIndex)}
         </Text>
+
+        {/* Bottom-Right Custom Leaf SVG decoration from Coala02.svg */}
+        <View style={styles.quoteDecorRight}>
+          <Image 
+            source={require('../../../Coala02.svg')} 
+            style={{ width: 75, height: 25, transform: [{ rotate: '180deg' }] }} 
+            contentFit="contain"
+          />
+        </View>
       </View>
 
       {/* Feature Sections */}
@@ -357,47 +396,47 @@ export default function HomeScreen({ navigation }: Props) {
             title={t('home.breathing')} subtitle={t('home.guidedExercises')} 
             colorLight={colors.calmLight} colorDark={colors.calm} delay={0} 
             onPress={() => { HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Light); navigation.navigate('Breathing'); }}
-            icon={<Svg width="40" height="40" viewBox="0 0 24 24" fill="none"><Path d="M12 4C7.58 4 4 7.58 4 12c0 4.42 3.58 8 8 8s8-3.58 8-8c0-4.42-3.58-8-8-8zm-1 12.5v-3H9v-3h2V8.5h2v2h2v3h-2v3h-2z" fill={isDark ? colors.text : colors.calm} /></Svg>}
+            icon={<Ionicons name="aperture-outline" size={32} color={isDark ? colors.text : colors.calm} />}
           />
           <GridCard 
             title={t('home.natureSounds')} subtitle={t('home.calmMind')} 
             colorLight={colors.calmLight} colorDark={colors.calm} delay={30} 
             onPress={() => { HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Light); navigation.navigate('NatureSounds'); }}
-            icon={<Svg width="40" height="40" viewBox="0 0 24 24" fill="none"><Path d="M9 18V5l12-2v13" stroke={isDark ? colors.text : colors.calm} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><Circle cx="6" cy="18" r="3" fill={isDark ? colors.text : colors.calm}/><Circle cx="18" cy="16" r="3" fill={isDark ? colors.text : colors.calm}/></Svg>}
+            icon={<Ionicons name="musical-notes-outline" size={32} color={isDark ? colors.text : colors.calm} />}
           />
           <GridCard 
             title={t('home.relaxHub')} subtitle={t('home.allRelaxingTools')} 
             colorLight={colors.calmLight} colorDark={colors.calm} delay={60} 
             onPress={() => { HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Light); navigation.navigate('Relax'); }}
-            icon={<Svg width="40" height="40" viewBox="0 0 24 24" fill="none"><Circle cx="12" cy="12" r="9" stroke={isDark ? colors.text : colors.calm} strokeWidth="2" strokeDasharray="4 4" /></Svg>}
+            icon={<Ionicons name="rose-outline" size={32} color={isDark ? colors.text : colors.calm} />}
           />
         </View>
-
+ 
         <SectionTitle title={t('home.trackingJournaling')} color={colors.text} />
         <View style={styles.grid}>
           <GridCard 
             title={t('home.thoughtDiary')} subtitle={t('home.logThoughts')}
             colorLight={colors.reflectLight} colorDark={colors.reflect} delay={90} 
             onPress={() => { HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Light); navigation.navigate('ThoughtDiary'); }}
-            icon={<Svg width="40" height="40" viewBox="0 0 24 24" fill="none"><Path d="M21 11c0 5.523-4.477 10-10 10S1 16.523 1 11 5.477 1 11 1c1.23 0 2.408.223 3.5.626-2.115 1.704-3.5 4.312-3.5 7.374 0 3.062 1.385 5.67 3.5 7.374A9.957 9.957 0 0021 11z" fill={isDark ? colors.text : colors.reflect} /></Svg>}
+            icon={<Ionicons name="journal-outline" size={32} color={isDark ? colors.text : colors.reflect} />}
           />
           <GridCard 
             title={t('home.dailyCheckIn')} subtitle={t('home.trackMood')} 
             colorLight={colors.reflectLight} colorDark={colors.reflect} delay={120} 
             onPress={() => { HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Light); navigation.navigate('Track'); }}
-            icon={<Svg width="40" height="40" viewBox="0 0 24 24" fill="none"><Path d="M12 4v16M4 12h16" stroke={isDark ? colors.text : colors.reflect} strokeWidth="2" strokeLinecap="round" /></Svg>}
+            icon={<Ionicons name="heart-outline" size={32} color={isDark ? colors.text : colors.reflect} />}
           />
           <GridCard 
             title={t('tracker.history')} subtitle={t('tracker.viewTrends')} 
             colorLight={colors.reflectLight} colorDark={colors.reflect} delay={150} 
             onPress={() => { HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Light); navigation.navigate('TrackerHistory'); }}
-            icon={<Svg width="40" height="40" viewBox="0 0 24 24" fill="none"><Path d="M4 20h16M6 16v4M12 10v10M18 4v16" stroke={isDark ? colors.text : colors.reflect} strokeWidth="2" strokeLinecap="round" /></Svg>}
+            icon={<Ionicons name="analytics-outline" size={32} color={isDark ? colors.text : colors.reflect} />}
           />
           <GridCard 
             title={t('tracker.hub')} subtitle={t('tracker.allTools')} 
             colorLight={colors.reflectLight} colorDark={colors.reflect} delay={180} 
             onPress={() => { HapticsAPI.impactAsync(HapticsAPI.ImpactFeedbackStyle.Light); navigation.navigate('Track'); }}
-            icon={<Svg width="40" height="40" viewBox="0 0 24 24" fill="none"><Circle cx="12" cy="12" r="8" stroke={isDark ? colors.text : colors.reflect} strokeWidth="2"/><Path d="M12 4v8l4 4" stroke={isDark ? colors.text : colors.reflect} strokeWidth="2" strokeLinecap="round"/></Svg>}
+            icon={<Ionicons name="grid-outline" size={32} color={isDark ? colors.text : colors.reflect} />}
           />
         </View>
 
@@ -467,21 +506,21 @@ export default function HomeScreen({ navigation }: Props) {
         </View>
 
         {/* Custom Notification Scheduler Section */}
-        <SectionTitle title="Custom Alerts" color={colors.text} />
+        <SectionTitle title={t('home.customAlertsTitle')} color={colors.text} />
         <View style={[styles.customNotificationCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <Text style={[styles.customNotificationSub, { color: colors.textMuted }]}>
-            Set a custom reminder. Choose between a one-time delay, an hourly nudge, or a daily repeating alert.
+            {t('home.customAlertsSub')}
           </Text>
           <TextInput
             style={[styles.customNotificationInput, { backgroundColor: colors.surfaceAlt, color: colors.text, borderColor: colors.border }]}
-            placeholder="Notification Title (e.g. Time for water!)"
+            placeholder={t('home.customAlertsTitlePlaceholder')}
             placeholderTextColor={colors.textMuted}
             value={customTitle}
             onChangeText={setCustomTitle}
           />
           <TextInput
             style={[styles.customNotificationInput, { backgroundColor: colors.surfaceAlt, color: colors.text, borderColor: colors.border }]}
-            placeholder="Notification Body (e.g. Relax, stretch, and check your posture.)"
+            placeholder={t('home.customAlertsBodyPlaceholder')}
             placeholderTextColor={colors.textMuted}
             value={customBody}
             onChangeText={setCustomBody}
@@ -489,13 +528,13 @@ export default function HomeScreen({ navigation }: Props) {
 
           {/* Mode Selector */}
           <Text style={{ fontFamily: typography.label, color: colors.text, fontSize: rf(13), fontWeight: '700', marginTop: 4, marginBottom: 8 }}>
-            NOTIFICATION TYPE:
+            {t('home.notificationType')}
           </Text>
           <View style={{ flexDirection: 'row', gap: 6, marginBottom: 16 }}>
             {[
-              { id: 'delay', label: 'One-time Delay' },
-              { id: 'hourly', label: 'Every Hour' },
-              { id: 'daily', label: 'Daily Alert' }
+              { id: 'delay', label: t('home.oneTimeDelay') },
+              { id: 'hourly', label: t('home.everyHour') },
+              { id: 'daily', label: t('home.dailyAlert') }
             ].map(modeOpt => (
               <TouchableOpacity
                 key={modeOpt.id}
@@ -520,11 +559,10 @@ export default function HomeScreen({ navigation }: Props) {
             ))}
           </View>
 
-          {/* Mode specific inputs */}
           {notificationMode === 'delay' && (
             <View>
               <Text style={{ fontFamily: typography.body, color: colors.text, fontSize: rf(14), marginBottom: 8 }}>
-                Pop up delay: {customDelay} seconds
+                {t('home.popUpDelay', { delay: customDelay })}
               </Text>
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
                 {['5', '10', '30', '60', '300', '1800'].map(secs => (
@@ -552,7 +590,7 @@ export default function HomeScreen({ navigation }: Props) {
           {notificationMode === 'hourly' && (
             <View style={{ backgroundColor: colors.surfaceAlt, padding: 12, borderRadius: 12, borderWidth: 1, borderColor: colors.borderLight, marginBottom: 16 }}>
               <Text style={{ fontFamily: typography.body, color: colors.text, fontSize: rf(13) }}>
-                This will nudge you every hour on the hour to take a breath, correct posture, or drink water.
+                {t('home.hourlyNudgeInfo')}
               </Text>
             </View>
           )}
@@ -560,12 +598,12 @@ export default function HomeScreen({ navigation }: Props) {
           {notificationMode === 'daily' && (
             <View style={{ marginBottom: 16 }}>
               <Text style={{ fontFamily: typography.body, color: colors.text, fontSize: rf(13), marginBottom: 8 }}>
-                Daily alert time: {dailyHour.padStart(2, '0')}:{dailyMinute.padStart(2, '0')}
+                {t('home.dailyAlertTime', { time: `${dailyHour.padStart(2, '0')}:${dailyMinute.padStart(2, '0')}` })}
               </Text>
               
               <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontFamily: typography.label, fontSize: rf(11), color: colors.textMuted, marginBottom: 4 }}>HOUR (0-23)</Text>
+                  <Text style={{ fontFamily: typography.label, fontSize: rf(11), color: colors.textMuted, marginBottom: 4 }}>{t('home.hourLabel')}</Text>
                   <TextInput
                     style={[styles.customNotificationInput, { backgroundColor: colors.surfaceAlt, color: colors.text, borderColor: colors.border, textAlign: 'center', marginBottom: 0 }]}
                     keyboardType="number-pad"
@@ -576,7 +614,7 @@ export default function HomeScreen({ navigation }: Props) {
                 </View>
                 <Text style={{ fontSize: rf(24), color: colors.text, marginTop: 16 }}>:</Text>
                 <View style={{ flex: 1 }}>
-                  <Text style={{ fontFamily: typography.label, fontSize: rf(11), color: colors.textMuted, marginBottom: 4 }}>MINUTE (0-59)</Text>
+                  <Text style={{ fontFamily: typography.label, fontSize: rf(11), color: colors.textMuted, marginBottom: 4 }}>{t('home.minuteLabel')}</Text>
                   <TextInput
                     style={[styles.customNotificationInput, { backgroundColor: colors.surfaceAlt, color: colors.text, borderColor: colors.border, textAlign: 'center', marginBottom: 0 }]}
                     keyboardType="number-pad"
@@ -632,46 +670,47 @@ export default function HomeScreen({ navigation }: Props) {
               if (notificationMode === 'delay') {
                 const delay = parseInt(customDelay, 10);
                 if (isNaN(delay) || delay <= 0) {
-                  Alert.alert("Error", "Please specify a valid delay in seconds.");
+                  Alert.alert(t('home.errorTitle'), t('home.invalidDelayError'));
                   return;
                 }
                 const scheduledId = await NotificationController.scheduleCustomRecurringNotification(titleVal, bodyVal, 'delay', delay);
                 if (scheduledId) {
-                  Alert.alert("Scheduled Successfully", `Your custom alert will trigger in ${delay} seconds.`);
+                  Alert.alert(t('home.successTitle'), t('home.delaySuccessMsg', { delay }));
                   setCustomTitle('');
                   setCustomBody('');
                 } else {
-                  Alert.alert("Error", "Could not schedule notification.");
+                  Alert.alert(t('home.errorTitle'), t('home.scheduleErrorMsg'));
                 }
               } else if (notificationMode === 'hourly') {
                 const scheduledId = await NotificationController.scheduleCustomRecurringNotification(titleVal, bodyVal, 'hourly');
                 if (scheduledId) {
-                  Alert.alert("Scheduled Successfully", "Hourly recurring notification has been registered.");
+                  Alert.alert(t('home.successTitle'), t('home.hourlySuccessMsg'));
                   setCustomTitle('');
                   setCustomBody('');
                 } else {
-                  Alert.alert("Error", "Could not schedule notification.");
+                  Alert.alert(t('home.errorTitle'), t('home.scheduleErrorMsg'));
                 }
               } else if (notificationMode === 'daily') {
                 const hr = parseInt(dailyHour, 10);
                 const mn = parseInt(dailyMinute, 10);
                 if (isNaN(hr) || hr < 0 || hr > 23 || isNaN(mn) || mn < 0 || mn > 59) {
-                  Alert.alert("Error", "Please input a valid hour (0-23) and minute (0-59).");
+                  Alert.alert(t('home.errorTitle'), t('home.invalidTimeError'));
                   return;
                 }
                 const scheduledId = await NotificationController.scheduleCustomRecurringNotification(titleVal, bodyVal, 'daily', undefined, hr, mn);
                 if (scheduledId) {
-                  Alert.alert("Scheduled Successfully", `Daily reminder scheduled repeating at ${dailyHour.padStart(2, '0')}:${dailyMinute.padStart(2, '0')}.`);
+                  const displayTime = `${dailyHour.padStart(2, '0')}:${dailyMinute.padStart(2, '0')}`;
+                  Alert.alert(t('home.successTitle'), t('home.dailySuccessMsg', { time: displayTime }));
                   setCustomTitle('');
                   setCustomBody('');
                 } else {
-                  Alert.alert("Error", "Could not schedule notification.");
+                  Alert.alert(t('home.errorTitle'), t('home.scheduleErrorMsg'));
                 }
               }
             }}
           >
             <Text style={{ color: 'white', fontFamily: typography.label, fontWeight: 'bold', letterSpacing: 0.5 }}>
-              SCHEDULE CUSTOM ALERT
+              {t('home.scheduleButton')}
             </Text>
           </TouchableOpacity>
         </View>
@@ -827,7 +866,7 @@ const styles = StyleSheet.create({
   },
   greeting: {
     fontFamily: typography.display,
-    fontSize: rf(30),
+    fontSize: rf(31),
     fontWeight: '800',
     letterSpacing: 0.3,
     color: '#FFFFFF',
@@ -880,36 +919,30 @@ const styles = StyleSheet.create({
   affirmationCard: {
     width: wp(90),
     alignSelf: 'center',
-    padding: hp(3),
-    paddingVertical: hp(4),
+    padding: hp(3.5),
+    paddingVertical: hp(4.5),
     borderRadius: 24,
     marginBottom: hp(3),
-    borderWidth: 1,
     position: 'relative',
-    shadowColor: '#C4A882',
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
-    elevation: 3,
   },
-  quoteGlyph: {
-    fontFamily: typography.display,
-    fontSize: rf(72),
+  quoteDecorLeft: {
     position: 'absolute',
-    top: -rf(16),
-    left: wp(4),
-    opacity: 0.2,
+    top: 14,
+    left: 16,
+    opacity: 0.4,
+  },
+  quoteDecorRight: {
+    position: 'absolute',
+    bottom: 14,
+    right: 16,
+    opacity: 0.4,
   },
   affirmationText: {
-    fontFamily: typography.display,
-    fontStyle: 'italic',
-    fontSize: rf(20),
-    fontWeight: '700',
+    fontFamily: 'DancingScript_Bold',
+    fontSize: rf(24),
     textAlign: 'center',
-    lineHeight: rf(28),
-    marginTop: hp(1),
-    textShadowColor: 'rgba(0, 0, 0, 0.2)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
+    lineHeight: rf(33),
+    paddingHorizontal: wp(5),
   },
   grid: {
     flexDirection: 'row',

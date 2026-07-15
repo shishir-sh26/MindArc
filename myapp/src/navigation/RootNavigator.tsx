@@ -11,6 +11,7 @@ import { useAuthStore } from '../store/authStore';
 import { syncUserDataFromFirestore } from '../utils/syncService';
 import { useActivityStore } from '../store/activityStore';
 import { SkeletonLoader } from '../components/common/SkeletonLoader';
+import { GlobalMiniPlayer } from '../components/common/GlobalMiniPlayer';
 
 import AuthScreen from '../screens/auth/AuthScreen';
 import ModuleDetailScreen from '../screens/learn/ModuleDetailScreen';
@@ -55,33 +56,36 @@ export const RootNavigator = () => {
   return (
     <NavigationIndependentTree>
       <NavigationContainer>
-        <Stack.Navigator
-          screenOptions={{
-            headerStyle: { backgroundColor: colors.surface },
-            headerTintColor: colors.text,
-            contentStyle: { backgroundColor: colors.background }
-          }}
-        >
-          {user ? (
-            // Authenticated Stack
-            <>
-              <Stack.Screen name="Tabs" component={BottomTabNavigator} options={{ headerShown: false }} />
-              <Stack.Screen name="ModuleDetail" component={ModuleDetailScreen} options={{ title: 'Module' }} />
-              <Stack.Screen name="TrackerHistory" component={TrackerHistoryScreen} options={{ title: 'Mood History' }} />
-              <Stack.Screen name="ThoughtDiary" component={ThoughtDiaryScreen} options={{ title: 'Thought Diary' }} />
-              <Stack.Screen name="NewThoughtEntry" component={NewThoughtEntryScreen} options={{ title: 'New Entry', presentation: 'modal' }} />
-              <Stack.Screen name="Breathing" component={BreathingScreen} options={{ title: 'Box Breathing' }} />
-              <Stack.Screen name="NatureSounds" component={NatureSoundsScreen} options={{ title: 'Nature Sounds' }} />
-              <Stack.Screen name="RelievingGames" component={RelievingGamesScreen} options={{ title: 'Relieving Games' }} />
-              <Stack.Screen name="YogaPlayer" component={YogaPlayerScreen} options={({ route }) => ({ title: route.params.title })} />
-              <Stack.Screen name="Crisis" component={CrisisScreen} options={{ title: 'Emergency Contacts', presentation: 'modal' }} />
-              <Stack.Screen name="UserDetails" component={UserDetailsScreen} options={{ headerShown: false }} />
-            </>
-          ) : (
-            // Unauthenticated Stack
-            <Stack.Screen name="Auth" component={AuthScreen} options={{ headerShown: false }} />
-          )}
-        </Stack.Navigator>
+        <View style={{ flex: 1 }}>
+          <Stack.Navigator
+            screenOptions={{
+              headerStyle: { backgroundColor: colors.surface },
+              headerTintColor: colors.text,
+              contentStyle: { backgroundColor: colors.background }
+            }}
+          >
+            {user ? (
+              // Authenticated Stack
+              <>
+                <Stack.Screen name="Tabs" component={BottomTabNavigator} options={{ headerShown: false }} />
+                <Stack.Screen name="ModuleDetail" component={ModuleDetailScreen} options={{ title: 'Module' }} />
+                <Stack.Screen name="TrackerHistory" component={TrackerHistoryScreen} options={{ title: 'Mood History' }} />
+                <Stack.Screen name="ThoughtDiary" component={ThoughtDiaryScreen} options={{ title: 'Thought Diary' }} />
+                <Stack.Screen name="NewThoughtEntry" component={NewThoughtEntryScreen} options={{ title: 'New Entry', presentation: 'modal' }} />
+                <Stack.Screen name="Breathing" component={BreathingScreen} options={{ title: 'Box Breathing' }} />
+                <Stack.Screen name="NatureSounds" component={NatureSoundsScreen} options={{ title: 'Nature Sounds' }} />
+                <Stack.Screen name="RelievingGames" component={RelievingGamesScreen} options={{ title: 'Relieving Games' }} />
+                <Stack.Screen name="YogaPlayer" component={YogaPlayerScreen} options={({ route }) => ({ title: route.params.title })} />
+                <Stack.Screen name="Crisis" component={CrisisScreen} options={{ title: 'Emergency Contacts', presentation: 'modal' }} />
+                <Stack.Screen name="UserDetails" component={UserDetailsScreen} options={{ headerShown: false }} />
+              </>
+            ) : (
+              // Unauthenticated Stack
+              <Stack.Screen name="Auth" component={AuthScreen} options={{ headerShown: false }} />
+            )}
+          </Stack.Navigator>
+          <GlobalMiniPlayer />
+        </View>
       </NavigationContainer>
     </NavigationIndependentTree>
   );

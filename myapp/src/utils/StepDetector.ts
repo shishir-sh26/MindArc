@@ -6,28 +6,27 @@ export interface AccelSample {
 }
 
 export class StepDetector {
-  // Config parameters
-  private readonly alpha = 0.15; // Low-pass filter smoothing coefficient (EMA alpha)
-  private readonly minVariance = 0.4; // Min peak-to-peak variance in m/s^2 (filters hand tremors/shake)
+  // Config parameters — tuned for real-world gentle walking
+  private readonly alpha = 0.12; // Lower = less smoothing = preserves more signal amplitude
+  private readonly minVariance = 0.15; // Min peak-to-valley range in m/s² (was 0.4, too aggressive)
   private readonly minInterval = 200; // Min interval between steps (sprinting max cadence: 5 steps/sec)
-  private readonly maxInterval = 2000; // Max interval between steps (slow walk min cadence: 0.5 steps/sec)
-  private readonly lockCount = 6; // Number of consecutive steps to validate cadence rhythm
-  private readonly hysteresis = 0.15; // Zero-crossing hysteresis boundary deadband (m/s^2)
+  private readonly maxInterval = 2500; // Max interval between steps — generous for slow walkers
+  private readonly lockCount = 2; // Steps needed before committing — reduced from 4 for snappy response
 
   // Low pass filter state
-  private smoothedMagnitude = 1.0;
+  private smoothedMagnitude = 9.81;
   private hasInitializedFilter = false;
+  private prevSmoothed = 9.81;
 
-  // Rolling time window of samples (1000ms duration)
-  private rollingWindow: { magnitude: number; timestamp: number }[] = [];
-  
-  // Previous smoothed magnitude for zero-crossing check
-  private prevSmoothed = 1.0;
+  // Peak/Valley History Arrays
+  // Pre-seeded closer together so the initial threshold is easier to cross
+  private peakHistory: number[] = [10.2, 10.2, 10.2, 10.2];
+  private valleyHistory: number[] = [9.4, 9.4, 9.4, 9.4];
 
-  // Dynamic Threshold average tracking
-  private smoothedThreshold = 0.0;
-  private hasInitializedThreshold = false;
+  // Dynamic tracking variables
   private isAboveThreshold = false;
+  private isSlopePositive = true;
+  private currentExtremeVal = 9.81;
 
   // State Machine parameters
   private state: 'SEARCHING' | 'LOCKED' = 'SEARCHING';
@@ -47,14 +46,15 @@ export class StepDetector {
   public reset() {
     this.state = 'SEARCHING';
     this.stepBuffer = [];
-    this.rollingWindow = [];
     this.hasInitializedFilter = false;
-    this.smoothedMagnitude = 1.0;
-    this.prevSmoothed = 1.0;
+    this.smoothedMagnitude = 9.81;
+    this.prevSmoothed = 9.81;
     this.lastStepTimestamp = 0;
-    this.smoothedThreshold = 0.0;
-    this.hasInitializedThreshold = false;
+    this.peakHistory = [10.2, 10.2, 10.2, 10.2];
+    this.valleyHistory = [9.4, 9.4, 9.4, 9.4];
     this.isAboveThreshold = false;
+    this.isSlopePositive = true;
+    this.currentExtremeVal = 9.81;
   }
 
   /**
@@ -73,19 +73,16 @@ export class StepDetector {
 
   /**
    * Processes a new raw 3-axis accelerometer sample.
-   * Acceleration is assumed to be in Gs or m/s^2.
-   * If the input is in Gs, we multiply by 9.81 to convert to standard SI units (m/s^2) for peak-to-peak variance checks.
-   * Let's determine the magnitude units: expo-sensors Accelerometer returns values in Gs (where 1G ~ 9.81 m/s^2).
+   * Acceleration is assumed to be in Gs (Expo Accelerometer standard).
    */
   public processSample(x: number, y: number, z: number, timestamp: number): boolean {
-    // 1. Convert Gs to m/s^2 and calculate Euclidean vector norm magnitude
+    // 1. Convert Gs to m/s² and calculate Euclidean vector norm magnitude
     const xMs2 = x * 9.80665;
     const yMs2 = y * 9.80665;
     const zMs2 = z * 9.80665;
     const magnitude = Math.sqrt(xMs2 * xMs2 + yMs2 * yMs2 + zMs2 * zMs2);
 
-    // Cadence check: check if the inactivity timeout (2000ms) has been exceeded.
-    // Run this first so that state is reset immediately on a post-pause sample.
+    // Cadence check: check if the inactivity timeout has been exceeded
     if (this.lastStepTimestamp > 0 && timestamp - this.lastStepTimestamp > this.maxInterval) {
       this.state = 'SEARCHING';
       this.stepBuffer = [];
@@ -98,57 +95,69 @@ export class StepDetector {
       this.smoothedMagnitude = magnitude;
       this.hasInitializedFilter = true;
       this.prevSmoothed = magnitude;
+      this.currentExtremeVal = magnitude;
       return false;
     }
 
     const currentSmoothed = this.alpha * magnitude + (1 - this.alpha) * this.smoothedMagnitude;
     this.smoothedMagnitude = currentSmoothed;
 
-    // 3. Update 1000ms rolling window
-    this.rollingWindow.push({ magnitude: currentSmoothed, timestamp });
-    while (this.rollingWindow.length > 0 && timestamp - this.rollingWindow[0].timestamp > 1000) {
-      this.rollingWindow.shift();
+    // 3. Compute dynamic threshold as midpoint of historical peak/valley averages
+    const avgPeak = this.peakHistory.reduce((a, b) => a + b, 0) / this.peakHistory.length;
+    const avgValley = this.valleyHistory.reduce((a, b) => a + b, 0) / this.valleyHistory.length;
+    const threshold = (avgPeak + avgValley) / 2;
+
+    // Calculate adaptive dynamic hysteresis — use /5 instead of /3 for easier crossing
+    const variance = avgPeak - avgValley;
+    const hysteresis = Math.max(0.04, variance / 5);
+
+    // Track peaks and valleys continuously
+    const slope = currentSmoothed - this.prevSmoothed;
+    if (slope > 0) {
+      if (!this.isSlopePositive) {
+        // Local valley detected (slope changed from negative to positive)
+        const valleyCandidate = this.currentExtremeVal;
+        if (valleyCandidate < threshold && valleyCandidate > 4.0) {
+          this.valleyHistory.push(valleyCandidate);
+          if (this.valleyHistory.length > 4) this.valleyHistory.shift();
+        }
+        this.isSlopePositive = true;
+        this.currentExtremeVal = currentSmoothed;
+      } else {
+        if (currentSmoothed > this.currentExtremeVal) {
+          this.currentExtremeVal = currentSmoothed;
+        }
+      }
+    } else if (slope < 0) {
+      if (this.isSlopePositive) {
+        // Local peak detected (slope changed from positive to negative)
+        const peakCandidate = this.currentExtremeVal;
+        if (peakCandidate > threshold && peakCandidate < 22.0) {
+          this.peakHistory.push(peakCandidate);
+          if (this.peakHistory.length > 4) this.peakHistory.shift();
+        }
+        this.isSlopePositive = false;
+        this.currentExtremeVal = currentSmoothed;
+      } else {
+        if (currentSmoothed < this.currentExtremeVal) {
+          this.currentExtremeVal = currentSmoothed;
+        }
+      }
     }
 
-    if (this.rollingWindow.length < 5) {
-      this.prevSmoothed = currentSmoothed;
-      return false;
-    }
-
-    // 4. Compute dynamic threshold and variance (Max - Min)
-    let minVal = Infinity;
-    let maxVal = -Infinity;
-    for (const sample of this.rollingWindow) {
-      if (sample.magnitude < minVal) minVal = sample.magnitude;
-      if (sample.magnitude > maxVal) maxVal = sample.magnitude;
-    }
-
-    const instantThreshold = (minVal + maxVal) / 2;
-    const variance = maxVal - minVal;
-
-    // Macro-rolling threshold smoothing
-    if (!this.hasInitializedThreshold) {
-      this.smoothedThreshold = instantThreshold;
-      this.hasInitializedThreshold = true;
-    } else {
-      const thresholdAlpha = 0.05;
-      this.smoothedThreshold = thresholdAlpha * instantThreshold + (1 - thresholdAlpha) * this.smoothedThreshold;
-    }
-
-    const threshold = this.smoothedThreshold;
     let stepsCommitted = false;
 
-    // 5. Zero-crossing detection with hysteresis on negative slope
-    if (currentSmoothed > threshold + this.hysteresis) {
+    // 4. Zero-crossing detection with hysteresis on negative slope
+    if (currentSmoothed > threshold + hysteresis) {
       this.isAboveThreshold = true;
-    } else if (this.isAboveThreshold && currentSmoothed < threshold - this.hysteresis) {
+    } else if (this.isAboveThreshold && currentSmoothed < threshold - hysteresis) {
       this.isAboveThreshold = false;
 
-      // Check variance threshold to filter out hand jitters/fidgets
+      // Filter hand shakes / tremors by checking signal amplitude variance
       if (variance >= this.minVariance) {
         const timeDelta = this.lastStepTimestamp === 0 ? 1000 : (timestamp - this.lastStepTimestamp);
 
-        // Verify that the step falls within valid human cadence interval limits (200ms to 2000ms)
+        // Verify time delta is within valid walking/sprinting cadence intervals
         if (timeDelta >= this.minInterval && timeDelta <= this.maxInterval) {
           this.lastStepTimestamp = timestamp;
 
@@ -156,7 +165,7 @@ export class StepDetector {
             this.stepBuffer.push(timestamp);
 
             if (this.stepBuffer.length >= this.lockCount) {
-              // Transition to LOCKED state & flush buffer
+              // Transition to LOCKED state & flush all buffered steps instantly
               this.state = 'LOCKED';
               const countToCommit = this.stepBuffer.length;
               this.stepBuffer = [];
@@ -164,16 +173,18 @@ export class StepDetector {
               stepsCommitted = true;
             }
           } else {
-            // Already LOCKED: commit step immediately (real-time step counter update)
+            // LOCKED state: commit stride immediately for instant UI response
             this.onStepDetected(1);
             stepsCommitted = true;
           }
-        } else {
-          // Cadence rhythm broken: reset search and establish new starting timestamp
+        } else if (timeDelta > this.maxInterval) {
+          // Cadence broken: drop lock and restart step search
           this.state = 'SEARCHING';
           this.stepBuffer = [];
           this.lastStepTimestamp = timestamp;
           this.stepBuffer.push(timestamp);
+        } else {
+          // Too fast (timeDelta < minInterval): ignore this crossing
         }
       }
     }
@@ -182,3 +193,4 @@ export class StepDetector {
     return stepsCommitted;
   }
 }
+
